@@ -1,47 +1,53 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const Survey = require('../models/Survey');
-const Response = require('../models/Response');
+const { Survey, Question } = require('../models/Survey');
+const { Response, Answer } = require('../models/Response');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
-
-// All survey routes require authentication
-router.use(auth);
 
 // Get available surveys for students
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
-    const query = { status: 'PUBLISHED' };
+    const whereClause = { status: 'PUBLISHED' };
 
     // Check if user has already responded to surveys
-    const userResponses = await Response.find({ userId: req.user._id })
-      .distinct('surveyId');
+    const userResponses = await Response.findAll({
+      where: { userId: req.user.userId },
+      attributes: ['surveyId']
+    });
+    const respondedSurveyIds = userResponses.map(r => r.surveyId);
 
     let surveys;
     
     if (status === 'completed') {
       // Get surveys user has completed
-      query._id = { $in: userResponses };
+      whereClause.id = { [require('sequelize').Op.in]: respondedSurveyIds };
     } else if (status === 'available') {
       // Get surveys user hasn't completed yet
-      query._id = { $nin: userResponses };
+      whereClause.id = { [require('sequelize').Op.notIn]: respondedSurveyIds };
     }
 
-    surveys = await Survey.find(query)
-      .populate('createdBy', 'fullName')
-      .sort({ publishedAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    surveys = await Survey.findAll({
+      where: whereClause,
+      include: [{
+        model: require('../models/User'),
+        as: 'creator',
+        attributes: ['id', 'firstName', 'lastName']
+      }],
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: (parseInt(page) - 1) * parseInt(limit)
+    });
 
     // Add completion status for each survey
     const surveysWithStatus = surveys.map(survey => ({
-      ...survey.toObject(),
-      isCompleted: userResponses.includes(survey._id.toString())
+      ...survey.toJSON(),
+      isCompleted: respondedSurveyIds.includes(survey.id)
     }));
 
-    const total = await Survey.countDocuments(query);
+    const total = await Survey.count({ where: whereClause });
 
     res.json({
       surveys: surveysWithStatus,
@@ -61,9 +67,20 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const survey = await Survey.findOne({
-      _id: req.params.id,
-      status: 'PUBLISHED'
-    }).populate('createdBy', 'fullName');
+      where: {
+        id: req.params.id,
+        status: 'PUBLISHED'
+      },
+      include: [{
+        model: require('../models/User'),
+        as: 'creator',
+        attributes: ['id', 'firstName', 'lastName']
+      }, {
+        model: Question,
+        as: 'questions',
+        order: [['order', 'ASC']]
+      }]
+    });
 
     if (!survey) {
       return res.status(404).json({ error: 'Survey not found' });
@@ -71,8 +88,10 @@ router.get('/:id', async (req, res) => {
 
     // Check if user has already responded
     const existingResponse = await Response.findOne({
-      surveyId: req.params.id,
-      userId: req.user._id
+      where: {
+        surveyId: req.params.id,
+        userId: req.user.userId
+      }
     });
 
     res.json({
@@ -85,8 +104,72 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Create new survey
+router.post('/', [
+  auth,
+  body('title').trim().isLength({ min: 1, max: 200 })
+    .withMessage('Title must be between 1 and 200 characters'),
+  body('description').trim().isLength({ min: 1, max: 1000 })
+    .withMessage('Description must be between 1 and 1000 characters'),
+  body('questions').isArray({ min: 1 })
+    .withMessage('At least one question is required'),
+  body('questions.*.text').trim().isLength({ min: 1 })
+    .withMessage('Question text is required'),
+  body('questions.*.type').isIn(['multiple', 'text', 'rating'])
+    .withMessage('Invalid question type'),
+  body('questions.*.options').isArray()
+    .withMessage('Options must be an array')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { title, description, questions } = req.body;
+
+    // Create survey
+    const survey = await Survey.create({
+      title,
+      description,
+      createdBy: req.user.userId,
+      status: 'PUBLISHED'
+    });
+
+    // Create questions
+    for (let i = 0; i < questions.length; i++) {
+      const question = questions[i];
+      await Question.create({
+        surveyId: survey.id,
+        text: question.text,
+        type: question.type,
+        options: question.options || [],
+        order: i + 1
+      });
+    }
+
+    // Return created survey with questions
+    const createdSurvey = await Survey.findByPk(survey.id, {
+      include: [{
+        model: Question,
+        as: 'questions',
+        order: [['order', 'ASC']]
+      }]
+    });
+
+    res.status(201).json(createdSurvey);
+  } catch (error) {
+    console.error('Create survey error:', error);
+    res.status(500).json({ error: 'Server error creating survey' });
+  }
+});
+
 // Submit survey response
 router.post('/:id/responses', [
+  auth,
   body('answers').isArray({ min: 1 })
     .withMessage('At least one answer is required'),
   body('answers.*.questionId').notEmpty()
@@ -105,96 +188,51 @@ router.post('/:id/responses', [
       });
     }
 
-    const survey = await Survey.findOne({
-      _id: req.params.id,
-      status: 'PUBLISHED'
-    });
+    const { answers, completionTime } = req.body;
+    const surveyId = req.params.id;
 
+    // Check if survey exists
+    const survey = await Survey.findByPk(surveyId);
     if (!survey) {
       return res.status(404).json({ error: 'Survey not found' });
     }
 
     // Check if user has already responded
     const existingResponse = await Response.findOne({
-      surveyId: req.params.id,
-      userId: req.user._id
+      where: {
+        surveyId,
+        userId: req.user.userId
+      }
     });
 
     if (existingResponse) {
       return res.status(400).json({ error: 'You have already responded to this survey' });
     }
 
-    const { answers, completionTime } = req.body;
-
-    // Validate answers against survey questions
-    const surveyQuestionIds = survey.questions.map(q => q._id.toString());
-    const answerQuestionIds = answers.map(a => a.questionId.toString());
-
-    // Check if all required questions are answered
-    const requiredQuestions = survey.questions.filter(q => q.required);
-    const answeredQuestionIds = answers.map(a => a.questionId.toString());
-
-    for (const question of requiredQuestions) {
-      if (!answeredQuestionIds.includes(question._id.toString())) {
-        return res.status(400).json({
-          error: `Required question "${question.questionText}" is not answered`
-        });
-      }
-    }
-
-    // Check if all answered questions exist in the survey
-    for (const questionId of answerQuestionIds) {
-      if (!surveyQuestionIds.includes(questionId)) {
-        return res.status(400).json({
-          error: 'Invalid question ID in answers'
-        });
-      }
-    }
-
-    // Validate multiple choice answers
-    for (const answer of answers) {
-      const question = survey.questions.find(q => q._id.toString() === answer.questionId.toString());
-      
-      if (question.type === 'MULTIPLE_CHOICE') {
-        if (!question.options.includes(answer.answer)) {
-          return res.status(400).json({
-            error: `Invalid option for question: ${question.questionText}`
-          });
-        }
-      }
-    }
-
     // Create response
-    const response = new Response({
-      surveyId: req.params.id,
-      userId: req.user._id,
-      answers: answers.map(answer => {
-        const question = survey.questions.find(q => q._id.toString() === answer.questionId.toString());
-        return {
-          questionId: answer.questionId,
-          questionText: question.questionText,
-          questionType: question.type,
-          answer: answer.answer
-        };
-      }),
+    const response = await Response.create({
+      surveyId,
+      userId: req.user.userId,
       completionTime,
-      ipAddress: req.ip
+      isCompleted: true
     });
 
-    await response.save();
-
-    // Update survey response count
-    await survey.incrementResponseCount();
+    // Create answers
+    for (const answer of answers) {
+      await Answer.create({
+        responseId: response.id,
+        questionId: answer.questionId,
+        answerText: typeof answer.answer === 'string' ? answer.answer : JSON.stringify(answer.answer),
+        rating: answer.rating || null
+      });
+    }
 
     res.status(201).json({
-      message: 'Response submitted successfully',
-      response
+      message: 'Survey response submitted successfully',
+      responseId: response.id
     });
   } catch (error) {
     console.error('Submit response error:', error);
-    if (error.code === 11000) {
-      return res.status(400).json({ error: 'You have already responded to this survey' });
-    }
     res.status(500).json({ error: 'Server error submitting response' });
   }
 });

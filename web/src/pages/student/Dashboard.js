@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FileText, Clock, CheckCircle, Plus } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Plus, MessageCircle } from 'lucide-react';
+import PostFeed from '../../components/Posts/PostFeed';
 
 const Dashboard = () => {
   const { api } = useAuth();
@@ -125,6 +126,17 @@ const Dashboard = () => {
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           <button
+            onClick={() => setActiveTab('feed')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'feed'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <MessageCircle className="inline w-4 h-4 mr-2" />
+            Feed
+          </button>
+          <button
             onClick={() => setActiveTab('available')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'available'
@@ -147,40 +159,44 @@ const Dashboard = () => {
         </nav>
       </div>
 
-      {/* Surveys List */}
-      <div className="space-y-4">
-        {surveys.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              {activeTab === 'available' ? 'No available surveys' : 'No completed surveys'}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {activeTab === 'available' 
-                ? 'Check back later for new surveys to complete.'
-                : 'Complete some surveys to see them here.'
-              }
-            </p>
-          </div>
-        ) : (
-          surveys.map((survey) => (
-            <div key={survey._id} className="card">
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      {getStatusIcon(survey)}
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {survey.title}
-                      </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        survey.isCompleted
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {getStatusText(survey)}
-                      </span>
-                    </div>
+      {/* Content based on active tab */}
+      {activeTab === 'feed' ? (
+        <PostFeed />
+      ) : (
+        /* Surveys List */
+        <div className="space-y-4">
+          {surveys.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                {activeTab === 'available' ? 'No available surveys' : 'No completed surveys'}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {activeTab === 'available' 
+                  ? 'Check back later for new surveys to complete.'
+                  : 'Complete some surveys to see them here.'
+                }
+              </p>
+            </div>
+          ) : (
+            surveys.map((survey) => (
+              <div key={survey.id} className="card">
+                <div className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(survey)}
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {survey.title}
+                        </h3>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          survey.isCompleted
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {getStatusText(survey)}
+                        </span>
+                      </div>
                     
                     {survey.description && (
                       <p className="mt-2 text-sm text-gray-600">
@@ -191,14 +207,14 @@ const Dashboard = () => {
                     <div className="mt-4 flex items-center space-x-6 text-sm text-gray-500">
                       <div className="flex items-center space-x-1">
                         <FileText className="h-4 w-4" />
-                        <span>{survey.questions.length} questions</span>
+                        <span>{survey.questions?.length || 0} questions</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
                         <span>Created {formatDate(survey.createdAt)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <span>By {survey.createdBy?.fullName || 'Unknown'}</span>
+                        <span>By {survey.creator?.firstName} {survey.creator?.lastName}</span>
                       </div>
                     </div>
                   </div>
@@ -213,7 +229,7 @@ const Dashboard = () => {
                       </Link>
                     ) : (
                       <Link
-                        to={`/survey/${survey._id}`}
+                        to={`/survey/${survey.id}`}
                         className="btn-primary"
                       >
                         Take Survey
@@ -226,6 +242,7 @@ const Dashboard = () => {
           ))
         )}
       </div>
+      )}
     </div>
   );
 };

@@ -9,9 +9,12 @@ import Layout from './components/Layout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 
+// Public pages
+import About from './pages/About';
+
 // Student pages
 import StudentDashboard from './pages/student/Dashboard';
-import TakeSurvey from './pages/student/TakeSurvey';
+import TakeSurvey from './components/Survey/TakeSurvey';
 import MyResponses from './pages/student/MyResponses';
 import ResponseDetails from './pages/student/ResponseDetails';
 
@@ -38,6 +41,7 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/about" element={<About />} />
             
             {/* Protected routes */}
             <Route path="/" element={

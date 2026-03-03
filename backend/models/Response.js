@@ -1,53 +1,106 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const answerSchema = new mongoose.Schema({
+const Answer = sequelize.define('Answer', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  responseId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'responses',
+      key: 'id'
+    }
+  },
   questionId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'questions',
+      key: 'id'
+    }
   },
-  questionText: {
-    type: String,
-    required: true
+  answerText: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
-  questionType: {
-    type: String,
-    enum: ['MULTIPLE_CHOICE', 'SHORT_ANSWER'],
-    required: true
+  answerOptions: {
+    type: DataTypes.JSON,
+    allowNull: true
   },
-  answer: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true
-  }
-});
-
-const responseSchema = new mongoose.Schema({
-  surveyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Survey',
-    required: true
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  answers: [answerSchema],
-  submittedAt: {
-    type: Date,
-    default: Date.now
-  },
-  completionTime: {
-    type: Number, // in seconds
-    required: true
-  },
-  ipAddress: {
-    type: String
+  rating: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: {
+      min: 1,
+      max: 5
+    }
   }
 }, {
-  timestamps: true
+  tableName: 'answers',
+  timestamps: true,
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
 });
 
-// Ensure one response per user per survey
-responseSchema.index({ surveyId: 1, userId: 1 }, { unique: true });
+const Response = sequelize.define('Response', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  surveyId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'surveys',
+      key: 'id'
+    }
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  submittedAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  isCompleted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  completionTime: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  }
+}, {
+  tableName: 'responses',
+  timestamps: true,
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci',
+  indexes: [
+    {
+      unique: true,
+      fields: ['surveyId', 'userId']
+    }
+  ]
+});
 
-module.exports = mongoose.model('Response', responseSchema);
+// Associations
+Response.hasMany(Answer, { foreignKey: 'responseId', as: 'answers' });
+Answer.belongsTo(Response, { foreignKey: 'responseId', as: 'response' });
+
+// Import Question model to avoid circular dependency
+const QuestionModel = sequelize.models.Question;
+if (QuestionModel) {
+  Answer.belongsTo(QuestionModel, { foreignKey: 'questionId', as: 'question' });
+}
+
+module.exports = { Response, Answer };

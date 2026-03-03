@@ -1,9 +1,11 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const { auth } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
 
 const router = express.Router();
+
+// Simple in-memory user store for testing
+const users = [];
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -12,10 +14,10 @@ const generateToken = (userId) => {
   });
 };
 
-// Register user - WORKING VERSION
+// Register user
 router.post('/register', async (req, res) => {
   try {
-    console.log('Registration request:', req.body);
+    console.log('Test registration request:', req.body);
     
     const { fullName, email, password } = req.body;
     
@@ -38,19 +40,27 @@ router.post('/register', async (req, res) => {
     const lastName = nameParts.slice(1).join(' ') || 'Name';
 
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = users.find(u => u.email === email);
     if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     // Create new user
-    const user = await User.create({
+    const user = {
+      id: users.length + 1,
       firstName,
       lastName,
       email,
-      password,
+      password: hashedPassword,
       role: 'student'
-    });
+    };
+    
+    users.push(user);
+    console.log('Test user created:', user.email);
 
     // Generate token
     const token = generateToken(user.id);
@@ -68,7 +78,7 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Test registration error:', error);
     res.status(500).json({ error: 'Server error during registration' });
   }
 });
@@ -76,35 +86,25 @@ router.post('/register', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
   try {
-    console.log('Login request received:', req.body);
+    console.log('Test login request:', req.body);
     const { email, password } = req.body;
 
     // Find user
-    console.log('Looking for user with email:', email);
-    const user = await User.findOne({ where: { email } });
+    const user = users.find(u => u.email === email);
     if (!user) {
-      console.log('User not found');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    console.log('User found:', user.id, user.email);
-    
     // Verify password
-    console.log('Comparing password...');
-    const isPasswordValid = await user.comparePassword(password);
-    console.log('Password valid:', isPasswordValid);
-    
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      console.log('Password invalid');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     // Generate token
-    console.log('Password valid, generating token for user:', user.id);
     const token = generateToken(user.id);
-    console.log('Token generated:', token);
 
-    const response = {
+    res.json({
       message: 'Login successful',
       token,
       user: {
@@ -115,24 +115,29 @@ router.post('/login', async (req, res) => {
         email: user.email,
         role: user.role
       }
-    };
-
-    console.log('Sending response:', response);
-    res.json(response);
-  } catch (error) {
-    console.error('Login error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
     });
+  } catch (error) {
+    console.error('Test login error:', error);
     res.status(500).json({ error: 'Server error during login' });
   }
 });
 
 // Get current user
-router.get('/me', auth, async (req, res) => {
+router.get('/me', async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.userId);
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-voxa-app-2024');
+    const user = users.find(u => u.id === decoded.userId);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token or user not found.' });
+    }
+
     res.json({
       user: {
         id: user.id,
@@ -140,19 +145,13 @@ router.get('/me', auth, async (req, res) => {
         lastName: user.lastName,
         fullName: user.firstName + ' ' + user.lastName,
         email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
+        role: user.role
       }
     });
   } catch (error) {
     console.error('Get current user error:', error);
     res.status(500).json({ error: 'Server error' });
   }
-});
-
-// Logout
-router.post('/logout', auth, async (req, res) => {
-  res.json({ message: 'Logout successful' });
 });
 
 module.exports = router;

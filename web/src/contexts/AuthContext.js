@@ -2,9 +2,13 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// Create axios instance
+// Create axios instance with optimized settings
 const api = axios.create({
   baseURL: '/api/v1',
+  timeout: 10000, // 10 second timeout
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
 // Auth context
@@ -12,11 +16,15 @@ const AuthContext = createContext();
 
 // Auth reducer
 const authReducer = (state, action) => {
+  console.log('Auth reducer called:', { state: { ...state }, action });
+  
   switch (action.type) {
     case 'LOGIN_START':
+      console.log('LOGIN_START action');
       return { ...state, loading: true, error: null };
     case 'LOGIN_SUCCESS':
-      return {
+      console.log('LOGIN_SUCCESS action:', action.payload);
+      const newState = {
         ...state,
         loading: false,
         isAuthenticated: true,
@@ -24,7 +32,10 @@ const authReducer = (state, action) => {
         token: action.payload.token,
         error: null,
       };
+      console.log('New state after LOGIN_SUCCESS:', newState);
+      return newState;
     case 'LOGIN_FAILURE':
+      console.log('LOGIN_FAILURE action:', action.payload);
       return {
         ...state,
         loading: false,
@@ -34,6 +45,7 @@ const authReducer = (state, action) => {
         error: action.payload,
       };
     case 'LOGOUT':
+      console.log('LOGOUT action');
       return {
         ...state,
         isAuthenticated: false,
@@ -42,6 +54,7 @@ const authReducer = (state, action) => {
         error: null,
       };
     case 'SET_USER':
+      console.log('SET_USER action:', action.payload);
       return {
         ...state,
         isAuthenticated: true,
@@ -57,7 +70,7 @@ const authReducer = (state, action) => {
 
 // Initial state
 const initialState = {
-  isAuthenticated: false,
+  isAuthenticated: !!localStorage.getItem('token'), // Set based on token existence
   user: null,
   token: localStorage.getItem('token'),
   loading: false,
@@ -101,13 +114,19 @@ export const AuthProvider = ({ children }) => {
     };
   }, [state.token]);
 
-  // Check authentication on mount
+  // Check authentication on mount with performance optimization
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await api.get('/auth/me');
+          // Add timeout to prevent hanging
+          const response = await Promise.race([
+            api.get('/auth/me'),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Auth check timeout')), 5000)
+            )
+          ]);
           dispatch({
             type: 'SET_USER',
             payload: response.data.user,
@@ -119,27 +138,41 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    checkAuth();
+    // Use setTimeout to prevent blocking initial render
+    const timeoutId = setTimeout(checkAuth, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
-  // Login function
+  // Login function with optimized performance
   const login = async (credentials) => {
     try {
+      console.log('Login starting...');
       dispatch({ type: 'LOGIN_START' });
+      
       const response = await api.post('/auth/login', credentials);
+      console.log('Login response received:', response.data);
       
       const { token, user } = response.data;
-      localStorage.setItem('token', token);
+      console.log('Extracted token and user:', { token, user });
       
-      dispatch({
+      // Store token immediately
+      localStorage.setItem('token', token);
+      console.log('Token stored in localStorage');
+      
+      // Dispatch success
+      const successAction = {
         type: 'LOGIN_SUCCESS',
         payload: { token, user },
-      });
+      };
+      console.log('Dispatching success action:', successAction);
+      dispatch(successAction);
       
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Login failed';
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Login failed';
       dispatch({
         type: 'LOGIN_FAILURE',
         payload: errorMessage,

@@ -1,77 +1,109 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const questionSchema = new mongoose.Schema({
-  questionText: {
-    type: String,
-    required: [true, 'Question text is required'],
-    trim: true,
-    maxlength: [500, 'Question text cannot exceed 500 characters']
+const Question = sequelize.define('Question', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  surveyId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'surveys',
+      key: 'id'
+    }
+  },
+  text: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   },
   type: {
-    type: String,
-    enum: ['MULTIPLE_CHOICE', 'SHORT_ANSWER'],
-    required: [true, 'Question type is required']
-  },
-  options: [{
-    type: String,
-    trim: true,
-    maxlength: [200, 'Option text cannot exceed 200 characters']
-  }],
-  required: {
-    type: Boolean,
-    default: true
+    type: DataTypes.ENUM('multiple', 'text', 'rating'),
+    allowNull: false
   },
   order: {
-    type: Number,
-    required: true
-  }
-});
-
-const surveySchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'Survey title is required'],
-    trim: true,
-    maxlength: [200, 'Survey title cannot exceed 200 characters']
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: [1000, 'Description cannot exceed 1000 characters']
-  },
-  questions: [questionSchema],
-  status: {
-    type: String,
-    enum: ['DRAFT', 'PUBLISHED', 'CLOSED'],
-    default: 'DRAFT'
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  publishedAt: {
-    type: Date
-  },
-  expiresAt: {
-    type: Date
-  },
-  responseCount: {
-    type: Number,
-    default: 0
+  options: {
+    type: DataTypes.JSON,
+    allowNull: true
   }
 }, {
-  timestamps: true
+  tableName: 'questions',
+  timestamps: true,
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
 });
 
-// Index for faster queries
-surveySchema.index({ status: 1, createdAt: -1 });
-surveySchema.index({ createdBy: 1 });
+const Survey = sequelize.define('Survey', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  title: {
+    type: DataTypes.STRING(200),
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [1, 200]
+    }
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  createdBy: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  status: {
+    type: DataTypes.ENUM('DRAFT', 'PUBLISHED', 'CLOSED'),
+    defaultValue: 'PUBLISHED',
+    allowNull: false
+  },
+  responseCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false
+  },
+  targetAudience: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  startDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  endDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
+}, {
+  tableName: 'surveys',
+  timestamps: true,
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
+});
 
-// Update response count
-surveySchema.methods.incrementResponseCount = function() {
+// Associations
+Survey.hasMany(Question, { foreignKey: 'surveyId', as: 'questions' });
+Question.belongsTo(Survey, { foreignKey: 'surveyId', as: 'survey' });
+
+// Instance method to increment response count
+Survey.prototype.incrementResponseCount = async function() {
   this.responseCount += 1;
-  return this.save();
+  await this.save();
 };
 
-module.exports = mongoose.model('Survey', surveySchema);
+module.exports = { Survey, Question };
