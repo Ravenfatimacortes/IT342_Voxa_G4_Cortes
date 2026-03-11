@@ -1,60 +1,37 @@
-const { Sequelize } = require('sequelize');
-const mysql = require('mysql2');
+const { createClient } = require('@supabase/supabase-js');
 
-const sequelize = new Sequelize('voxa', 'root', '', {
-  host: 'localhost',
-  port: 3306,
-  dialect: 'mysql',
-  logging: false,
-  dialectModule: mysql,
-  // Performance optimizations
-  pool: {
-    max: 10,
-    min: 2,
-    acquire: 30000,
-    idle: 10000
-  },
-  dialectOptions: {
-    charset: 'utf8mb4',
-    collate: 'utf8mb4_unicode_ci',
-    // Enable query cache
-    supportBigNumbers: true,
-    bigNumberStrings: true
-  },
-  // Disable unnecessary features for performance
-  define: {
-    timestamps: true,
-    underscored: false,
-    freezeTableName: true
-  },
-  // Query optimization
-  query: {
-    raw: false
-  },
-  // Connection timeout
-  retry: {
-    match: [
-      /ETIMEDOUT/,
-      /EHOSTUNREACH/,
-      /ECONNRESET/,
-      /ENOTFOUND/
-    ],
-    max: 3
-  }
-});
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Service role client bypasses RLS policies
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 const connectDB = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('XAMPP MySQL Connected: localhost:3306');
-    return sequelize;
+    // Test connection by checking if we can access the database
+    const { data, error } = await supabase.from('users').select('count').limit(1);
+    
+    if (error) {
+      console.error('Database connection error:', error);
+      console.log('WARNING: Could not connect to Supabase. Please check your configuration!');
+      return supabase;
+    }
+    
+    console.log('Supabase Connected Successfully');
+    return supabase;
   } catch (error) {
     console.error('Database connection error:', error);
-    console.log('WARNING: Could not connect to MySQL. Please ensure XAMPP MySQL is running!');
-    console.log('Continuing without database connection for testing...');
-    // Don't exit, just return sequelize for later attempts
-    return sequelize;
+    console.log('WARNING: Could not connect to Supabase. Please check your configuration!');
+    return supabase;
   }
 };
 
-module.exports = { sequelize, connectDB };
+module.exports = { supabase, supabaseAdmin, connectDB, sequelize: null, DataTypes: null };

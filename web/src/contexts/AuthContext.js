@@ -222,6 +222,41 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google OAuth login
+  const loginWithGoogle = () => {
+    // Redirect to Google OAuth endpoint
+    window.location.href = `${api.defaults.baseURL}/auth/google`;
+  };
+
+  // Handle Google OAuth callback
+  const handleGoogleCallback = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userStr = urlParams.get('user');
+    
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(decodeURIComponent(userStr));
+        localStorage.setItem('token', token);
+        
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: { token, user },
+        });
+        
+        toast.success('Google login successful!');
+        return { success: true };
+      } catch (error) {
+        console.error('Error parsing Google callback:', error);
+        toast.error('Google login failed');
+        return { success: false, error: 'Invalid callback data' };
+      }
+    } else {
+      toast.error('Google login failed');
+      return { success: false, error: 'Missing callback data' };
+    }
+  };
+
   // Clear error function
   const clearError = () => {
     dispatch({ type: 'CLEAR_ERROR' });
@@ -233,6 +268,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     clearError,
+    loginWithGoogle,
+    handleGoogleCallback,
     api,
   };
 

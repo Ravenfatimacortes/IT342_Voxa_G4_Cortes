@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 // Auth pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import GoogleCallback from './pages/auth/GoogleCallback';
 
 // Public pages
 import About from './pages/About';
@@ -45,6 +46,7 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/auth/success" element={<GoogleCallback />} />
             <Route path="/about" element={<About />} />
             <Route path="/help" element={<Help />} />
             <Route path="/privacy" element={<Privacy />} />

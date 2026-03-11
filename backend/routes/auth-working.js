@@ -45,7 +45,7 @@ router.post('/register', async (req, res) => {
 
     // Check if user already exists
     console.log('Checking if user exists...');
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findByEmail(email);
     if (existingUser) {
       console.log('❌ User already exists:', email);
       return res.status(400).json({ error: 'User with this email already exists' });
@@ -91,7 +91,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Find user
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -126,7 +126,7 @@ router.post('/login', async (req, res) => {
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.userId);
+    const user = await User.findById(req.user.userId);
     res.json({
       user: {
         id: user.id,

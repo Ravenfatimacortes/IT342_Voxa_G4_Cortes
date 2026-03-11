@@ -3,60 +3,31 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const passport = require('passport');
+const session = require('express-session');
 require('dotenv').config();
 
-const { connectDB, sequelize } = require('./config/database');
+const { connectDB, supabase } = require('./config/database');
 const authRoutes = require('./routes/auth-working');
 const surveyRoutes = require('./routes/surveys');
 const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
-const postRoutes = require('./routes/posts');
+const googleAuthRoutes = require('./routes/auth-google');
+// const postRoutes = require('./routes/posts'); // Temporarily disabled - needs Supabase migration
 
 const app = express();
 
-// Connect to XAMPP MySQL Database
+// Connect to Supabase Database
 connectDB().then(() => {
-  // Sync database models
-  const User = require('./models/User');
-  const { Survey, Question } = require('./models/Survey');
-  const { Response, Answer } = require('./models/Response');
-  const Post = require('./models/Post');
-  const Comment = require('./models/Comment');
-  const Like = require('./models/Like');
+  console.log('Database connection established');
   
-  // Set up associations
-  User.hasMany(Survey, { foreignKey: 'createdBy', as: 'surveys' });
-  Survey.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
-  
-  User.hasMany(Response, { foreignKey: 'userId', as: 'responses' });
-  Response.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-  
-  Survey.hasMany(Response, { foreignKey: 'surveyId', as: 'responses' });
-  Response.belongsTo(Survey, { foreignKey: 'surveyId', as: 'survey' });
-  
-  // Post associations
-  User.hasMany(Post, { foreignKey: 'userId', as: 'posts' });
-  Post.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-  
-  Post.hasMany(Comment, { foreignKey: 'postId', as: 'comments' });
-  Comment.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
-  
-  User.hasMany(Comment, { foreignKey: 'userId', as: 'comments' });
-  Comment.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-  
-  Post.hasMany(Like, { foreignKey: 'postId', as: 'postLikes' });
-  Like.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
-  
-  User.hasMany(Like, { foreignKey: 'userId', as: 'likes' });
-  Like.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-  
-  // Sync all models with database
-  sequelize.sync({ force: false, alter: true })
+  // Test basic database access
+  supabase.from('users').select('count').limit(1)
     .then(() => {
-      console.log('Database synchronized successfully');
+      console.log('Database access verified');
     })
     .catch(err => {
-      console.error('Error synchronizing database:', err);
+      console.error('Database access error:', err);
     });
 });
 
@@ -86,19 +57,32 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Session middleware for Passport
+app.use(session({
+  secret: process.env.JWT_SECRET || 'fallback-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Set to true in production with HTTPS
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth/google', googleAuthRoutes);
 app.use('/api/v1/surveys', surveyRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/posts', postRoutes);
+// app.use('/api/v1/posts', postRoutes); // Temporarily disabled - needs Supabase migration
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     message: 'Voxa API is running',
-    database: 'XAMPP MySQL',
+    database: 'Supabase',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
