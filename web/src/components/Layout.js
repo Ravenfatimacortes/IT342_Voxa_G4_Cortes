@@ -124,6 +124,7 @@ const Layout = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
+<<<<<<< HEAD
       {/* If it's student dashboard, render the outlet directly without layout wrapper */}
       {isStudentDashboard ? (
         <Outlet />
@@ -172,6 +173,53 @@ const Layout = () => {
           </div>
         </>
       )}
+=======
+      {/* Mobile sidebar overlay - hide on student dashboard */}
+      {!isStudentDashboard && sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - hide on student dashboard */}
+      {!isStudentDashboard && (
+        <div className={`
+          fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <Sidebar />
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top header - only show on mobile and when not on student dashboard */}
+        {!isStudentDashboard && (
+          <header className="bg-white shadow-sm border-b border-gray-200 lg:hidden">
+            <div className="flex items-center justify-between h-16 px-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="text-gray-500 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+              <h1 className="text-lg font-semibold text-gray-900">Voxa</h1>
+              <div className="w-6" />
+            </div>
+          </header>
+        )}
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <Outlet />
+            </div>
+          </div>
+        </main>
+      </div>
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
     </div>
   );
 };

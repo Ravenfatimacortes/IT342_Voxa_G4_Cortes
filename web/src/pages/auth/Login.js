@@ -2,7 +2,12 @@ import React, { useState, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
+<<<<<<< HEAD
 import { Eye, EyeOff } from 'lucide-react';
+=======
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
 
 const Login = () => {
   const { login, loginWithGoogle, loading, isAuthenticated } = useAuth();

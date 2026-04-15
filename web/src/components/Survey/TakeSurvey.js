@@ -20,6 +20,7 @@ const TakeSurvey = () => {
 
   const fetchSurvey = async () => {
     try {
+<<<<<<< HEAD
       // Use mock data for now since API is not ready
       const mockSurveys = [
         {
@@ -102,6 +103,33 @@ const TakeSurvey = () => {
       });
       setAnswers(initialAnswers);
       
+=======
+      const response = await fetch(`/api/v1/surveys/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.hasResponded) {
+          navigate('/dashboard', { 
+            state: { message: 'You have already completed this survey' }
+          });
+          return;
+        }
+        setSurvey(data.survey);
+        
+        // Initialize answers
+        const initialAnswers = {};
+        data.survey.questions.forEach(q => {
+          initialAnswers[q.id] = q.type === 'multiple' ? '' : '';
+        });
+        setAnswers(initialAnswers);
+      } else {
+        navigate('/dashboard');
+      }
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
     } catch (error) {
       console.error('Error fetching survey:', error);
       navigate('/dashboard');
@@ -141,6 +169,7 @@ const TakeSurvey = () => {
     const completionTime = Math.floor((Date.now() - startTime) / 1000);
 
     try {
+<<<<<<< HEAD
       // Mock submission - simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -158,6 +187,33 @@ const TakeSurvey = () => {
       navigate('/dashboard', { 
         state: { message: 'Survey completed successfully!' }
       });
+=======
+      const formattedAnswers = survey.questions.map(q => ({
+        questionId: q.id,
+        answer: answers[q.id]
+      }));
+
+      const response = await fetch(`/api/v1/surveys/${id}/responses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          answers: formattedAnswers,
+          completionTime
+        })
+      });
+
+      if (response.ok) {
+        navigate('/dashboard', { 
+          state: { message: 'Survey completed successfully!' }
+        });
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to submit survey');
+      }
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
     } catch (error) {
       console.error('Error submitting survey:', error);
       alert('Failed to submit survey');
@@ -258,7 +314,11 @@ const TakeSurvey = () => {
         <h1 className="text-2xl font-bold text-gray-900">{survey.title}</h1>
         <p className="text-gray-600 mt-2">{survey.description}</p>
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+<<<<<<< HEAD
           <span>Voxa Survey System</span>
+=======
+          <span>Created by: {survey.creator?.firstName} {survey.creator?.lastName}</span>
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
           <span>Question {currentQuestion + 1} of {survey.questions.length}</span>
         </div>
       </div>

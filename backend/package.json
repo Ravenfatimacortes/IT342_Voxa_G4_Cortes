@@ -18,7 +18,11 @@
   "author": "Voxa Team",
   "license": "MIT",
   "dependencies": {
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.101.1",
+=======
+    "@supabase/supabase-js": "^2.39.0",
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

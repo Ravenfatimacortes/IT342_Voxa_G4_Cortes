@@ -8,7 +8,11 @@ import Layout from './components/Layout';
 // Auth pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+<<<<<<< HEAD
 import AuthCallback from './pages/auth/AuthCallback';
+=======
+import GoogleCallback from './pages/auth/GoogleCallback';
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
 
 // Public pages
 import About from './pages/About';
@@ -20,13 +24,19 @@ import Support from './pages/Support';
 // Student pages
 import StudentDashboard from './pages/student/Dashboard';
 import TakeSurvey from './components/Survey/TakeSurvey';
+<<<<<<< HEAD
 import TakeSurveyRefactored from './components/Survey/TakeSurveyRefactored';
+=======
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
 import MyResponses from './pages/student/MyResponses';
 import ResponseDetails from './pages/student/ResponseDetails';
 
 // Faculty pages
 import FacultyDashboard from './pages/faculty/Dashboard';
+<<<<<<< HEAD
 import FacultyDashboardRefactored from './pages/faculty/DashboardRefactored';
+=======
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
 import SurveyManagement from './pages/faculty/SurveyManagement';
 import CreateSurvey from './pages/faculty/CreateSurvey';
 import EditSurvey from './pages/faculty/EditSurvey';
@@ -38,10 +48,13 @@ import Profile from './pages/Profile';
 
 // Common pages
 import NotFound from './pages/NotFound';
+<<<<<<< HEAD
 import DesignPatternsDemo from './pages/DesignPatternsDemo';
 
 // Debug: Log App component mounting
 console.log('App component is mounting...');
+=======
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
 
 function App() {
   return (
@@ -52,13 +65,20 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+<<<<<<< HEAD
             <Route path="/auth/callback" element={<AuthCallback />} />
+=======
+            <Route path="/auth/success" element={<GoogleCallback />} />
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
             <Route path="/about" element={<About />} />
             <Route path="/help" element={<Help />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/support" element={<Support />} />
+<<<<<<< HEAD
             <Route path="/patterns-demo" element={<DesignPatternsDemo />} />
+=======
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
             
             {/* Protected routes */}
             <Route path="/" element={
@@ -71,14 +91,22 @@ function App() {
               
               {/* Student routes */}
               <Route path="dashboard" element={<StudentDashboard />} />
+<<<<<<< HEAD
               <Route path="survey/:id" element={<TakeSurveyRefactored />} />
               <Route path="survey/:id/original" element={<TakeSurvey />} />
+=======
+              <Route path="survey/:id" element={<TakeSurvey />} />
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
               <Route path="my-responses" element={<MyResponses />} />
               <Route path="my-responses/:id" element={<ResponseDetails />} />
               
               {/* Faculty routes */}
+<<<<<<< HEAD
               <Route path="faculty/dashboard" element={<FacultyDashboardRefactored />} />
               <Route path="faculty/dashboard/original" element={<FacultyDashboard />} />
+=======
+              <Route path="faculty/dashboard" element={<FacultyDashboard />} />
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
               <Route path="faculty/surveys" element={<SurveyManagement />} />
               <Route path="faculty/surveys/new" element={<CreateSurvey />} />
               <Route path="faculty/surveys/:id/edit" element={<EditSurvey />} />

@@ -2,10 +2,17 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
+<<<<<<< HEAD
 import { Eye, EyeOff } from 'lucide-react';
 
 const Register = () => {
   const { register: registerUser, loading, loginWithGoogle } = useAuth();
+=======
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+
+const Register = () => {
+  const { register: registerUser, loading } = useAuth();
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -26,12 +33,16 @@ const Register = () => {
     const result = await registerUser(userData);
     console.log('Registration result:', result);
     if (result.success) {
+<<<<<<< HEAD
       // Redirect based on role
       if ((userData.role || '').toLowerCase() === 'faculty') {
         navigate('/faculty/dashboard');
       } else {
         navigate('/student/dashboard');
       }
+=======
+      navigate('/dashboard');
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
     }
   };
 
@@ -84,7 +95,35 @@ const Register = () => {
           <p className="text-white/80 text-center mb-8">Join to access surveys & share feedback</p>
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+<<<<<<< HEAD
             {/* Full Name field removed as requested */}
+=======
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-white mb-2">
+                Full Name
+              </label>
+              <input
+                {...register('fullName', {
+                  required: 'Full name is required',
+                  minLength: {
+                    value: 2,
+                    message: 'Full name must be at least 2 characters',
+                  },
+                  maxLength: {
+                    value: 100,
+                    message: 'Full name cannot exceed 100 characters',
+                  },
+                })}
+                type="text"
+                autoComplete="name"
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="Enter your full name"
+              />
+              {errors.fullName && (
+                <p className="mt-2 text-sm text-red-500">{errors.fullName.message}</p>
+              )}
+            </div>
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
@@ -204,6 +243,7 @@ const Register = () => {
                   'Create Account'
                 )}
               </button>
+<<<<<<< HEAD
 
               {/* Google OAuth Divider */}
               <div className="relative my-4">
@@ -229,6 +269,8 @@ const Register = () => {
                 </svg>
                 Continue with Google
               </button>
+=======
+>>>>>>> b8fab12386a496c49ed776a5e9d9df6a7e6e7bf8
               
               <div className="text-center">
                 <p className="text-white/80 text-sm">
