@@ -83,6 +83,8 @@ const FacultyDashboard = () => {
     { id: 3, message: 'Course evaluation report is ready', type: 'info', time: '1 day ago' }
   ]);
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   // Get user initials for avatar
   const getUserInitials = () => {
     if (!user?.name) return 'F';
@@ -156,6 +158,19 @@ const FacultyDashboard = () => {
 
   const handleViewResponses = (surveyId) => {
     navigate(`/faculty/surveys/${surveyId}/responses`);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   // CSS-in-JS for faculty dashboard
@@ -749,6 +764,105 @@ const FacultyDashboard = () => {
       font-weight: 500;
     }
 
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: #ef4444;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: auto;
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+
+    .logout-btn:hover {
+      background: rgba(239,68,68,0.1);
+      color: #f87171;
+      border-color: rgba(239,68,68,0.3);
+    }
+
+    .logout-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 400px;
+      width: 90%;
+      backdrop-filter: blur(12px);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .modal-message {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-cancel {
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-cancel:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .btn-logout {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-logout:hover {
+      background: #dc2626;
+    }
+
     @media (max-width: 1024px) {
       .content-grid {
         grid-template-columns: 1fr;
@@ -813,6 +927,11 @@ const FacultyDashboard = () => {
                 </div>
               );
             })}
+            
+            <div className="logout-btn" onClick={handleLogoutClick}>
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </div>
           </aside>
 
           <main>
@@ -986,6 +1105,25 @@ const FacultyDashboard = () => {
             </div>
           </main>
         </div>
+        
+        {showLogoutConfirm && (
+          <div className="modal-overlay" onClick={handleCancelLogout}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h3 className="modal-title">Confirm Logout</h3>
+              <p className="modal-message">
+                Are you sure you want to logout? You'll need to sign in again to access your dashboard.
+              </p>
+              <div className="modal-actions">
+                <button className="btn btn-cancel" onClick={handleCancelLogout}>
+                  Cancel
+                </button>
+                <button className="btn btn-logout" onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

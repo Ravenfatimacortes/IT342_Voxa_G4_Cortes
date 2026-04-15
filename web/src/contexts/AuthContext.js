@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Login starting...');
       dispatch({ type: 'LOGIN_START' });
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: 'LOGIN_START' });
       
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
@@ -187,17 +187,32 @@ export const AuthProvider = ({ children }) => {
   // Google OAuth login with Supabase
   const loginWithGoogle = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      console.log('Starting Google OAuth login...');
+      
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Google OAuth error:', error);
+        toast.error(`Google login failed: ${error.message}`);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('Google OAuth initiated successfully');
+      return { success: true };
     } catch (error) {
       console.error('Google login error:', error);
-      toast.error('Google login failed');
+      const errorMessage = error.message || 'Google login failed';
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
