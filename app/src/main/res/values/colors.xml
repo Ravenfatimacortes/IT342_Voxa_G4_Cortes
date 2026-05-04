@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="bg_dark">#0B1120</color>
+    <color name="card_bg">#1A1E2E</color>
+    <color name="card_bg_dark">#111827</color>
+    <color name="primary_blue">#3B82F6</color>
+    <color name="text_secondary">#94A3B8</color>
+    <color name="input_bg">#E2E8F0</color>
+    <color name="input_bg_dark">#1F2937</color>
+    <color name="wave_color">#1E293B</color>
+
+    <!-- Dashboard Colors -->
+    <color name="urgent_red">#EF4444</color>
+    <color name="new_green">#10B981</color>
+    <color name="in_progress_orange">#F59E0B</color>
+    <color name="urgent_red_bg">#2D1B1B</color>
+    <color name="new_green_bg">#1B2D24</color>
+    <color name="in_progress_orange_bg">#2D241B</color>
+    <color name="completed_green">#10B981</color>
+    <color name="published_green">#10B981</color>
+    <color name="draft_orange">#F59E0B</color>
+    <color name="closed_grey">#64748B</color>
+    <color name="progress_bar_bg">#1E293B</color>
+    <color name="nav_selected">#3B82F6</color>
+    <color name="nav_unselected">#64748B</color>
+    <color name="faculty_tag_bg">#1E1B4B</color>
+    <color name="faculty_tag_text">#818CF8</color>
+    <color name="avatar_purple">#4F46E5</color>
+    <!-- Admin Dashboard Colors -->
+    <color name="admin_tag_bg">#450A0A</color>
+    <color name="admin_tag_text">#F87171</color>
+    <color name="alert_red_bg">#450A0A</color>
+    <color name="alert_red_text">#F87171</color>
+    <color name="stat_purple">#A78BFA</color>
+    <color name="stat_green">#34D399</color>
+    <color name="stat_blue">#60A5FA</color>
+    <color name="stat_orange">#FB923C</color>
+    <color name="suspended_orange">#D97706</color>
+    <color name="suspended_orange_bg">#451A03</color>
+    <color name="active_green">#059669</color>
+    <color name="active_green_bg">#064E3B</color>
+    <color name="chart_bar_bg">#1E293B</color>
+    <color name="chart_bar_active">#3B82F6</color>
+
+    <!-- Orbs -->
+    <color name="orb_blue_1">#1E40AF</color>
+    <color name="orb_blue_2">#3B82F6</color>
+    <color name="orb_blue_3">#1D4ED8</color>
+</resources>
