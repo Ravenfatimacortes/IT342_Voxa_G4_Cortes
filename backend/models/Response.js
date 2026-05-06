@@ -5,7 +5,7 @@ class Response {
     const { surveyId, userId, submittedAt = new Date(), isCompleted = true, completionTime } = responseData;
     
     const { data, error } = await supabase
-      .from('responses')
+      .from('user_responses')
       .insert([
         {
           survey_id: surveyId,
@@ -23,7 +23,7 @@ class Response {
   }
   
   static async findById(id, includeAnswers = false) {
-    let query = supabase.from('responses').select('*');
+    let query = supabase.from('user_responses').select('*');
     
     if (includeAnswers) {
       query = query.select(`
@@ -39,7 +39,7 @@ class Response {
   }
   
   static async findByUserId(userId, includeSurvey = false) {
-    let query = supabase.from('responses').select('*');
+    let query = supabase.from('user_responses').select('*');
     
     if (includeSurvey) {
       query = query.select(`
@@ -78,7 +78,7 @@ class Response {
     }
     
     const { data, error } = await supabase
-      .from('responses')
+      .from('user_responses')
       .select(selectQuery)
       .eq('survey_id', surveyId)
       .order('submitted_at', { ascending: false });
@@ -89,7 +89,7 @@ class Response {
   
   static async findBySurveyAndUser(surveyId, userId) {
     const { data, error } = await supabase
-      .from('responses')
+      .from('user_responses')
       .select('*')
       .eq('survey_id', surveyId)
       .eq('user_id', userId)
@@ -107,7 +107,7 @@ class Response {
     if (updateData.completionTime !== undefined) updateFields.completion_time = updateData.completionTime;
     
     const { data, error } = await supabase
-      .from('responses')
+      .from('user_responses')
       .update(updateFields)
       .eq('id', id)
       .select()
@@ -119,7 +119,7 @@ class Response {
   
   static async delete(id) {
     const { error } = await supabase
-      .from('responses')
+      .from('user_responses')
       .delete()
       .eq('id', id);
     

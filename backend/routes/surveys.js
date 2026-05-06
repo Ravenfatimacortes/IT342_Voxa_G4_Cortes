@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { supabaseAdmin } = require('../config/database');
 const { auth } = require('../middleware/auth');
+const FirstFacultyService = require('../services/firstFacultyService');
 
 const router = express.Router();
 
@@ -14,11 +15,21 @@ router.get('/', auth, async (req, res) => {
 
     // Get surveys user has already responded to
     const { data: userResponses } = await supabaseAdmin
-      .from('responses')
+      .from('user_responses')
       .select('survey_id')
       .eq('user_id', req.user.userId);
     
-    const respondedSurveyIds = userResponses.map(r => r.survey_id);
+    const respondedSurveyIds = userResponses ? userResponses.map(r => r.survey_id) : [];
+
+    // Get first faculty surveys (automatically visible to everyone)
+    const firstFacultySurveys = await FirstFacultyService.getFirstFacultySurveys();
+    const firstFacultyIds = firstFacultySurveys.map(s => s.id);
+
+    // Build query conditions
+    let queryConditions = 'status.eq.PUBLISHED';
+    if (firstFacultyIds.length > 0) {
+      queryConditions += `,id.in.(${firstFacultyIds.join(',')})`;
+    }
 
     // Fetch all published surveys with creator information
     let { data: surveys, count, error } = await supabaseAdmin
@@ -26,12 +37,12 @@ router.get('/', auth, async (req, res) => {
       .select(`
         *,
         users!surveys_created_by_fkey (
-          firstName,
-          lastName,
+          first_name,
+          last_name,
           email
         )
       `, { count: 'exact' })
-      .eq('status', 'PUBLISHED')
+      .or(queryConditions)
       .order('created_at', { ascending: false });
     
     
@@ -54,9 +65,9 @@ router.get('/', auth, async (req, res) => {
       description: survey.description,
       createdBy: survey.created_by,
       creator: survey.users ? {
-        firstName: survey.users.firstName,
-        lastName: survey.users.lastName,
-        fullName: `${survey.users.firstName} ${survey.users.lastName}`,
+        firstName: survey.users.first_name,
+        lastName: survey.users.last_name,
+        fullName: `${survey.users.first_name} ${survey.users.last_name}`,
         email: survey.users.email
       } : null,
       status: survey.status,
@@ -66,7 +77,8 @@ router.get('/', auth, async (req, res) => {
       endDate: survey.end_date,
       createdAt: survey.created_at,
       updatedAt: survey.updated_at,
-      isCompleted: respondedSurveyIds.includes(survey.id)
+      isCompleted: respondedSurveyIds.includes(survey.id),
+      isFirstFacultySurvey: firstFacultyIds.includes(survey.id)
     }));
 
     res.json({
@@ -86,12 +98,15 @@ router.get('/', auth, async (req, res) => {
 // Get specific survey details
 router.get('/:id', auth, async (req, res) => {
   try {
-    // Get survey details
+    // Check if this is a first faculty survey
+    const isFirstFacultySurvey = await FirstFacultyService.isFirstFacultySurvey(req.params.id);
+
+    // Get survey details (published OR first faculty survey)
     const { data: survey, error: surveyError } = await supabaseAdmin
       .from('surveys')
       .select('*')
       .eq('id', req.params.id)
-      .eq('status', 'PUBLISHED')
+      .or(`status.eq.PUBLISHED${isFirstFacultySurvey ? ',status.eq.DRAFT' : ''}`)
       .single();
 
     if (surveyError || !survey) {
@@ -107,7 +122,7 @@ router.get('/:id', auth, async (req, res) => {
 
     // Check if user has already responded
     const { data: existingResponse } = await supabaseAdmin
-      .from('responses')
+      .from('user_responses')
       .select('*')
       .eq('survey_id', req.params.id)
       .eq('user_id', req.user.userId)
@@ -132,7 +147,7 @@ router.get('/:id', auth, async (req, res) => {
         type: q.type === 'text' ? 'SHORT_ANSWER' : q.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
         required: true,
         order: q.order,
-        options: q.options || []
+        options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : []
       }))
     };
 
@@ -273,7 +288,7 @@ router.post('/:id/responses', [
 
     // Check if user has already responded
     const { data: existingResponse } = await supabaseAdmin
-      .from('responses')
+      .from('user_responses')
       .select('*')
       .eq('survey_id', surveyId)
       .eq('user_id', req.user.userId)
@@ -288,7 +303,7 @@ router.post('/:id/responses', [
     
     // Create response first
     const { data: response, error: responseError } = await supabaseAdmin
-      .from('responses')
+      .from('user_responses')
       .insert([{
         survey_id: surveyId,
         user_id: req.user.userId,
@@ -335,7 +350,7 @@ router.post('/:id/responses', [
       console.error('Insert answers error:', answersError);
       // Rollback response creation if answers fail
       await supabaseAdmin
-        .from('responses')
+        .from('user_responses')
         .delete()
         .eq('id', response.id);
       

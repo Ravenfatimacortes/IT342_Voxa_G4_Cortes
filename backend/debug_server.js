@@ -5,10 +5,10 @@ async function debugDatabase() {
   console.log('=== Database Debug Test ===');
   
   try {
-    // Test 1: Check if user_responses table exists and has data
-    console.log('\n1. Testing user_responses table...');
+    // Test 1: Check if responses table exists and has data
+    console.log('\n1. Testing responses table...');
     const { data: userResponses, error: urError } = await supabaseAdmin
-      .from('user_responses')
+      .from('responses')
       .select('count')
       .limit(1);
     
@@ -34,7 +34,7 @@ async function debugDatabase() {
       console.log('\n3. Testing responses for user:', testUserId);
       
       const { data: responses, error: respError } = await supabaseAdmin
-        .from('user_responses')
+        .from('responses')
         .select('*')
         .eq('user_id', testUserId)
         .limit(5);

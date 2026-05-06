@@ -37,7 +37,7 @@ BEGIN
         a.answer_text,
         a.answer_options,
         a.rating
-    FROM responses r
+    FROM user_responses r
     LEFT JOIN answers a ON r.id = a.response_id
     WHERE r.survey_id = survey_id_param
     ORDER BY r.submitted_at DESC, a.question_id;

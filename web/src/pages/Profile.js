@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, Lock, Eye, EyeOff, Edit3, Camera, X } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Edit3, Camera, X, UserCircle, Award, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
@@ -30,8 +30,12 @@ const Profile = () => {
     reset: resetProfile,
   } = useForm({
     defaultValues: {
-      fullName: user?.fullName || '',
+      firstName: user?.fullName?.split(' ')[0] || '',
+      lastName: user?.fullName?.split(' ')[1] || '',
       email: user?.email || '',
+      studentId: user?.studentId || '2021-10342',
+      yearLevel: user?.yearLevel || '3rd Year',
+      department: user?.department || 'Faculty of Engineering',
     }
   });
 
@@ -83,7 +87,10 @@ const Profile = () => {
       
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append('fullName', data.fullName);
+      const fullName = `${data.firstName} ${data.lastName}`;
+      formData.append('fullName', fullName);
+      formData.append('yearLevel', data.yearLevel);
+      formData.append('department', data.department);
       if (profilePicture) {
         formData.append('profilePicture', profilePicture);
       }
@@ -92,14 +99,12 @@ const Profile = () => {
       
       // Update user context with new profile data
       if (response.data.user) {
-        // Update the user context with the new profile data
-        // This will trigger a re-render and update the profile picture everywhere
         updateUser(response.data.user);
       }
       
       toast.success('Profile updated successfully!');
-      setIsEditing(false); // Close edit mode after successful update
-      setProfilePicture(null); // Clear the selected file
+      setIsEditing(false);
+      setProfilePicture(null);
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error(error.response?.data?.error || 'Failed to update profile');
@@ -136,19 +141,23 @@ const Profile = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Profile</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Manage your account information and security settings
-        </p>
+      <div className="flex items-center space-x-3">
+        <UserCircle className="h-8 w-8 text-blue-400" />
+        <div>
+          <h1 className="text-2xl font-bold text-white">My Profile</h1>
+          <p className="text-sm text-slate-400">
+            Manage your account information, security settings, and preferences.
+          </p>
+        </div>
       </div>
 
-      {/* Profile Information */}
+      {/* Student Profile Card */}
       <div className="card">
         <div className="p-6">
-          <div className="flex items-center space-x-4 mb-6">
+          <div className="flex items-start space-x-6">
+            {/* Avatar Section */}
             <div className="relative group">
-              <div className="h-16 w-16 bg-blue-500/20 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="h-24 w-24 bg-blue-500/20 rounded-lg flex items-center justify-center overflow-hidden">
                 {previewUrl ? (
                   <img 
                     src={previewUrl} 
@@ -156,38 +165,20 @@ const Profile = () => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <User className="h-8 w-8 text-blue-400" />
+                  <div className="text-center">
+                    <span className="text-2xl font-bold text-blue-400">
+                      {user?.fullName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'JS'}
+                    </span>
+                  </div>
                 )}
               </div>
-              {isEditing && (
-                <>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 bg-slate-700 border-2 border-slate-600 rounded-full p-1.5 shadow-sm hover:bg-slate-600 hover:border-blue-500 transition-colors"
-                    title="Change profile picture"
-                  >
-                    <Camera className="h-3 w-3 text-slate-300 group-hover:text-blue-400" />
-                  </button>
-                  {previewUrl && (
-                    <button
-                      onClick={handleRemovePicture}
-                      className="absolute -top-1 -right-1 bg-slate-700 border-2 border-red-500/50 rounded-full p-1.5 shadow-sm hover:bg-red-500/20 hover:border-red-500 transition-colors"
-                      title="Remove profile picture"
-                    >
-                      <X className="h-3 w-3 text-red-400" />
-                    </button>
-                  )}
-                </>
-              )}
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="absolute -bottom-1 -right-1 bg-slate-700 border-2 border-slate-600 rounded-full p-1.5 shadow-sm hover:bg-slate-600 hover:border-blue-500 transition-colors"
-                  title="Edit profile"
-                >
-                  <Edit3 className="h-3 w-3 text-slate-300 group-hover:text-blue-400" />
-                </button>
-              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-2 right-2 bg-slate-700 border-2 border-slate-600 rounded-full p-1.5 shadow-sm hover:bg-slate-600 hover:border-blue-500 transition-colors"
+                title="Change profile picture"
+              >
+                <Camera className="h-3 w-3 text-slate-300 group-hover:text-blue-400" />
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -196,53 +187,163 @@ const Profile = () => {
                 className="hidden"
               />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-lg font-medium text-white">{user?.fullName}</h2>
-                {isEditing && (
-                  <span className="text-xs text-blue-400 font-medium">Editing</span>
-                )}
+
+            {/* Profile Info */}
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <h2 className="text-xl font-bold text-white">{user?.fullName || 'Juan Santos'}</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  Student - Faculty of Engineering
+                </span>
               </div>
-              <p className="text-sm text-slate-400 capitalize">{user?.role?.toLowerCase()}</p>
-              <p className="text-xs text-slate-500">
-                Member since {formatDate(user?.createdAt)}
-              </p>
+              
+              <div className="space-y-1 text-sm text-slate-400 mb-4">
+                <p>BSCS - 3rd Year</p>
+                <p>{user?.email || 'juan.santos@university.edu'}</p>
+                <p>Joined Jan 2024</p>
+                <p>ID: {user?.studentId || '2021-10342'}</p>
+              </div>
+
+              {/* Statistics */}
+              <div className="flex space-x-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">8</div>
+                  <div className="text-xs text-slate-400">Completed</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-emerald-400">94%</div>
+                  <div className="text-xs text-slate-400">Response Rate</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-400">3</div>
+                  <div className="text-xs text-slate-400">Pending</div>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {isEditing && (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Personal Information */}
+        <div className="card">
+          <div className="p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <User className="h-5 w-5 text-blue-400" />
+              <h2 className="text-lg font-medium text-white">Personal Information</h2>
+            </div>
+            
             <form onSubmit={handleProfileSubmit(onProfileUpdate)} className="space-y-4">
-              <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-slate-300">
-                  Full Name
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-slate-500" />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    FIRST NAME
+                  </label>
                   <input
-                    {...registerProfile('fullName', {
-                      required: 'Full name is required',
-                      minLength: {
-                        value: 2,
-                        message: 'Full name must be at least 2 characters',
-                      },
+                    {...registerProfile('firstName', {
+                      required: 'First name is required',
                     })}
                     type="text"
-                    className="input pl-10"
-                    placeholder="Enter your full name"
+                    className="input"
+                    placeholder="Juan"
                   />
+                  {profileErrors.firstName && (
+                    <p className="mt-1 text-sm text-red-400">{profileErrors.firstName.message}</p>
+                  )}
                 </div>
-                {profileErrors.fullName && (
-                  <p className="mt-1 text-sm text-red-400">{profileErrors.fullName.message}</p>
-                )}
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    LAST NAME
+                  </label>
+                  <input
+                    {...registerProfile('lastName', {
+                      required: 'Last name is required',
+                    })}
+                    type="text"
+                    className="input"
+                    placeholder="Santos"
+                  />
+                  {profileErrors.lastName && (
+                    <p className="mt-1 text-sm text-red-400">{profileErrors.lastName.message}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="pt-4 flex space-x-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  EMAIL ADDRESS
+                </label>
+                <div className="relative">
+                  <input
+                    value={user?.email || 'juan.santos@university.edu'}
+                    type="email"
+                    className="input pr-20"
+                    disabled
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <div className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
+                      Locked
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  Managed by your institution - cannot be changed.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  STUDENT ID
+                </label>
+                <div className="relative">
+                  <input
+                    value={user?.studentId || '2021-10342'}
+                    type="text"
+                    className="input pr-20"
+                    disabled
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <div className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
+                      Locked
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    YEAR LEVEL
+                  </label>
+                  <select {...registerProfile('yearLevel')} className="input">
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                    <option value="5th Year">5th Year</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    DEPARTMENT
+                  </label>
+                  <select {...registerProfile('department')} className="input">
+                    <option value="Faculty of Engineering">Faculty of Engineering</option>
+                    <option value="Faculty of Arts and Sciences">Faculty of Arts and Sciences</option>
+                    <option value="Faculty of Business">Faculty of Business</option>
+                    <option value="Faculty of Education">Faculty of Education</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-700">
+                <p className="text-xs text-slate-400 mb-4">Changes apply immediately.</p>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn btn-primary disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-blue-600 text-white hover:bg-blue-700 px-4 py-2"
                 >
                   {loading ? (
                     <div className="flex items-center">
@@ -250,206 +351,169 @@ const Profile = () => {
                       Updating...
                     </div>
                   ) : (
-                    'Save Changes'
+                    <>
+                      <Award className="h-4 w-4 mr-2" />
+                      Update Profile
+                    </>
                   )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="btn btn-outline"
-                >
-                  Cancel
                 </button>
               </div>
             </form>
-          )}
-
-          {!isEditing && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300">
-                  Full Name
-                </label>
-                <div className="mt-1 p-3 bg-slate-700/50 rounded-lg">
-                  <p className="text-white">{user?.fullName}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300">
-                  Email Address
-                </label>
-                <div className="mt-1 p-3 bg-slate-700/50 rounded-lg relative">
-                  <p className="text-white">{user?.email}</p>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <div className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
-                      Locked
-                    </div>
-                  </div>
-                </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  Email address cannot be changed for security reasons
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      {/* Change Password */}
-      <div className="card">
-        <div className="p-6">
-          <h2 className="text-lg font-medium text-white mb-4">Change Password</h2>
-          
-          <form onSubmit={handlePasswordSubmit(onPasswordChange)} className="space-y-4">
-            <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-slate-300">
-                Current Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500" />
-                </div>
-                <input
-                  {...registerPassword('currentPassword', {
-                    required: 'Current password is required',
-                  })}
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  className="input pl-10 pr-10"
-                  placeholder="Enter current password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                >
-                  {showCurrentPassword ? (
-                    <EyeOff className="h-5 w-5 text-slate-500" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-slate-500" />
-                  )}
-                </button>
-              </div>
-              {passwordErrors.currentPassword && (
-                <p className="mt-1 text-sm text-red-400">{passwordErrors.currentPassword.message}</p>
-              )}
+        {/* Change Password */}
+        <div className="card">
+          <div className="p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <Lock className="h-5 w-5 text-blue-400" />
+              <h2 className="text-lg font-medium text-white">Change Password</h2>
             </div>
-
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-slate-300">
-                New Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500" />
+            
+            <form onSubmit={handlePasswordSubmit(onPasswordChange)} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  CURRENT PASSWORD
+                </label>
+                <div className="relative">
+                  <input
+                    {...registerPassword('currentPassword', {
+                      required: 'Current password is required',
+                    })}
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    className="input pr-10"
+                    placeholder="Enter current password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4 text-slate-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-slate-500" />
+                    )}
+                  </button>
                 </div>
-                <input
-                  {...registerPassword('newPassword', {
-                    required: 'New password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must be at least 8 characters',
-                    },
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                      message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-                    },
-                  })}
-                  type={showNewPassword ? 'text' : 'password'}
-                  className="input pl-10 pr-10"
-                  placeholder="Enter new password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-5 w-5 text-slate-500" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-slate-500" />
-                  )}
-                </button>
-              </div>
-              {passwordErrors.newPassword && (
-                <p className="mt-1 text-sm text-red-400">{passwordErrors.newPassword.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300">
-                Confirm New Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500" />
-                </div>
-                <input
-                  {...registerPassword('confirmPassword', {
-                    required: 'Please confirm your new password',
-                    validate: value => value === watchNewPassword || 'Passwords do not match',
-                  })}
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  className="input pl-10 pr-10"
-                  placeholder="Confirm new password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-slate-500" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-slate-500" />
-                  )}
-                </button>
-              </div>
-              {passwordErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-400">{passwordErrors.confirmPassword.message}</p>
-              )}
-            </div>
-
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={passwordLoading}
-                className="btn btn-primary disabled:opacity-50"
-              >
-                {passwordLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Changing Password...
-                  </div>
-                ) : (
-                  'Change Password'
+                {passwordErrors.currentPassword && (
+                  <p className="mt-1 text-sm text-red-400">{passwordErrors.currentPassword.message}</p>
                 )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      {/* Account Information */}
-      <div className="card">
-        <div className="p-6">
-          <h2 className="text-lg font-medium text-white mb-4">Account Information</h2>
-          
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm font-medium text-slate-300">Account Type</span>
-              <span className="text-sm text-slate-400 capitalize">{user?.role?.toLowerCase()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-medium text-slate-300">Member Since</span>
-              <span className="text-sm text-slate-400">{formatDate(user?.createdAt)}</span>
-            </div>
-            {user?.lastLogin && (
-              <div className="flex justify-between">
-                <span className="text-sm font-medium text-slate-300">Last Login</span>
-                <span className="text-sm text-slate-400">{formatDate(user.lastLogin)}</span>
               </div>
-            )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  NEW PASSWORD
+                </label>
+                <div className="relative">
+                  <input
+                    {...registerPassword('newPassword', {
+                      required: 'New password is required',
+                      minLength: {
+                        value: 8,
+                        message: 'Password must be at least 8 characters',
+                      },
+                      pattern: {
+                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+                      },
+                    })}
+                    type={showNewPassword ? 'text' : 'password'}
+                    className="input pr-10"
+                    placeholder="Minimum 8 characters"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4 text-slate-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-slate-500" />
+                    )}
+                  </button>
+                </div>
+                {passwordErrors.newPassword && (
+                  <p className="mt-1 text-sm text-red-400">{passwordErrors.newPassword.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  CONFIRM NEW PASSWORD
+                </label>
+                <div className="relative">
+                  <input
+                    {...registerPassword('confirmPassword', {
+                      required: 'Please confirm your new password',
+                      validate: value => value === watchNewPassword || 'Passwords do not match',
+                    })}
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className="input pr-10"
+                    placeholder="Re-enter new password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-slate-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-slate-500" />
+                    )}
+                  </button>
+                </div>
+                {passwordErrors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-400">{passwordErrors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              {/* Password Requirements */}
+              <div className="bg-slate-700/50 rounded-lg p-3 space-y-1">
+                <p className="text-xs font-medium text-slate-300 mb-2">Password Requirements:</p>
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-1 w-1 bg-slate-400 rounded-full"></div>
+                    <p className="text-xs text-slate-400">At least 8 characters</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-1 w-1 bg-slate-400 rounded-full"></div>
+                    <p className="text-xs text-slate-400">One uppercase letter</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-1 w-1 bg-slate-400 rounded-full"></div>
+                    <p className="text-xs text-slate-400">One number</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-1 w-1 bg-slate-400 rounded-full"></div>
+                    <p className="text-xs text-slate-400">One special character</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-700">
+                <p className="text-xs text-slate-400 mb-4">Password is encrypted and secure.</p>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-blue-600 text-white hover:bg-blue-700 px-4 py-2"
+                >
+                  {passwordLoading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Changing...
+                    </div>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4 mr-2" />
+                      Change Password
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

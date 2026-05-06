@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FileText, Clock, CheckCircle, Plus, MessageCircle } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Plus, MessageCircle, Crown } from 'lucide-react';
 import PostFeed from '../../components/Posts/PostFeed';
 
 const Dashboard = () => {
@@ -190,6 +190,12 @@ const Dashboard = () => {
                         <h3 className="text-lg font-medium text-white">
                           {survey.title}
                         </h3>
+                        {survey.isFirstFacultySurvey && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Faculty
+                          </span>
+                        )}
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           survey.isCompleted
                             ? 'bg-emerald-500/20 text-emerald-400'
@@ -224,14 +230,14 @@ const Dashboard = () => {
                       {survey.isCompleted ? (
                         <Link
                           to={`/my-responses`}
-                          className="btn btn-outline"
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-blue-600 text-white hover:bg-blue-700 px-4 py-2"
                         >
                           View Response
                         </Link>
                       ) : (
                         <Link
                           to={`/survey/${survey.id}`}
-                          className="btn btn-primary"
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2"
                         >
                           Take Survey
                         </Link>

@@ -14,7 +14,8 @@ import {
   Download,
   Inbox,
   Zap,
-  Activity
+  Activity,
+  Crown
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -234,7 +235,15 @@ const Dashboard = () => {
                         <tr key={survey.id || survey._id} className="border-b border-slate-700 hover:bg-slate-700/50 transition-colors">
                           <td className="py-3 px-4">
                             <div>
-                              <p className="text-white font-medium">{survey.title || 'Untitled Survey'}</p>
+                              <div className="flex items-center space-x-2 mb-1">
+                                <p className="text-white font-medium">{survey.title || 'Untitled Survey'}</p>
+                                {survey.isFirstFacultySurvey && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                    <Crown className="h-3 w-3 mr-1" />
+                                    First Faculty
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-slate-500">{survey.questions ? survey.questions.length : 0} questions · Created {formatDate(survey.createdAt)}</p>
                             </div>
                           </td>

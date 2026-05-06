@@ -154,7 +154,7 @@ const MyResponses = () => {
                   <div className="ml-4 flex-shrink-0">
                     <Link
                       to={`/my-responses/${response._id}`}
-                      className="btn btn-outline flex items-center"
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-blue-600 text-white hover:bg-blue-700 px-4 py-2"
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       View Details

@@ -48,14 +48,14 @@ router.post('/surveys', [
       }
     }
 
-    // Create survey with Supabase - automatically publish for visibility to all users
+    // Create survey with Supabase - start as DRAFT, user can publish when ready
     const { data: surveyData, error: surveyError } = await supabaseAdmin
       .from('surveys')
       .insert([{
         title,
         description,
         created_by: req.user.userId,
-        status: 'PUBLISHED'
+        status: 'DRAFT'
       }])
       .select()
       .single();
@@ -69,9 +69,12 @@ router.post('/surveys', [
     const questionsToInsert = questions.map((q, index) => ({
       survey_id: surveyData.id,
       text: q.questionText,
-      type: q.type === 'SHORT_ANSWER' ? 'text' : q.type === 'MULTIPLE_CHOICE' ? 'multiple' : 'text',
+      type: q.type === 'SHORT_ANSWER' ? 'short_answer' : q.type === 'MULTIPLE_CHOICE' ? 'multiple_choice' : 'short_answer',
       "order": q.order,
-      options: q.options || []
+      is_required: q.required !== undefined ? q.required : true,
+      options: q.options || [],
+      validation_rules: q.validationRules || {},
+      settings: q.settings || {}
     }));
 
     const { data: questionsData, error: questionsError } = await supabaseAdmin
@@ -104,10 +107,12 @@ router.post('/surveys', [
       questions: (questionsData || []).map(q => ({
         id: q.id,
         questionText: q.text,
-        type: q.type === 'text' ? 'SHORT_ANSWER' : q.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
-        required: true,
+        type: q.type === 'short_answer' ? 'SHORT_ANSWER' : q.type === 'multiple_choice' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
+        required: q.is_required,
         order: q.order,
-        options: q.options || []
+        options: q.options || [],
+        validationRules: q.validation_rules || {},
+        settings: q.settings || {}
       }))
     };
 
@@ -171,8 +176,8 @@ router.get('/surveys', async (req, res) => {
           questions: (questions || []).map(q => ({
             id: q.id,
             questionText: q.text,
-            type: q.type === 'text' ? 'SHORT_ANSWER' : q.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
-            required: true, // Default to true since schema doesn't have required field
+            type: q.type === 'short_answer' ? 'SHORT_ANSWER' : q.type === 'multiple_choice' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
+            required: q.is_required,
             order: q.order,
             options: q.options || []
           }))
@@ -290,13 +295,13 @@ router.delete('/surveys/:id', async (req, res) => {
       return res.status(500).json({ error: 'Server error deleting survey' });
     }
 
-    // Note: Related records in user_responses and answers tables should be 
+    // Note: Related records in responses and answers tables should be 
     // automatically deleted due to foreign key constraints if they are set up correctly
     // in your Supabase database. If not, you may need to add:
-    // ALTER TABLE user_responses ADD CONSTRAINT user_responses_survey_id_fkey 
+    // ALTER TABLE responses ADD CONSTRAINT responses_survey_id_fkey 
     //   FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE;
     // ALTER TABLE answers ADD CONSTRAINT answers_response_id_fkey 
-    //   FOREIGN KEY (response_id) REFERENCES user_responses(id) ON DELETE CASCADE;
+    //   FOREIGN KEY (response_id) REFERENCES responses(id) ON DELETE CASCADE;
 
     res.json({ message: 'Survey deleted successfully' });
   } catch (error) {
@@ -365,8 +370,8 @@ router.post('/surveys/:id/publish', async (req, res) => {
       questions: (questions || []).map(q => ({
         id: q.id,
         questionText: q.text,
-        type: q.type === 'text' ? 'SHORT_ANSWER' : q.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
-        required: true,
+        type: q.type === 'short_answer' ? 'SHORT_ANSWER' : q.type === 'multiple_choice' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
+        required: q.is_required,
         order: q.order,
         options: q.options || []
       }))
@@ -470,8 +475,8 @@ router.get('/surveys/:id', async (req, res) => {
       questions: (questions || []).map(q => ({
         id: q.id,
         questionText: q.text,
-        type: q.type === 'text' ? 'SHORT_ANSWER' : q.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
-        required: true,
+        type: q.type === 'short_answer' ? 'SHORT_ANSWER' : q.type === 'multiple_choice' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
+        required: q.is_required,
         order: q.order,
         options: q.options || []
       }))
@@ -553,8 +558,8 @@ router.get('/surveys/:id/responses', async (req, res) => {
       questions: (questions || []).map(q => ({
         id: q.id,
         questionText: q.text,
-        type: q.type === 'text' ? 'SHORT_ANSWER' : q.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
-        required: true,
+        type: q.type === 'short_answer' ? 'SHORT_ANSWER' : q.type === 'multiple_choice' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
+        required: q.is_required,
         order: q.order,
         options: q.options || []
       }))
@@ -677,8 +682,8 @@ router.get('/surveys/:id/responses/:userId', async (req, res) => {
       questions: (questions || []).map(q => ({
         id: q.id,
         questionText: q.text,
-        type: q.type === 'text' ? 'SHORT_ANSWER' : q.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
-        required: true,
+        type: q.type === 'short_answer' ? 'SHORT_ANSWER' : q.type === 'multiple_choice' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
+        required: q.is_required,
         order: q.order,
         options: q.options || []
       }))

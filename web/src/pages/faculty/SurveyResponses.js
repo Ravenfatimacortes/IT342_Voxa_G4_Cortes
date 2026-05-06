@@ -124,8 +124,8 @@ const SurveyResponses = () => {
   if (!survey) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-gray-900">Survey not found</h3>
-        <p className="mt-1 text-sm text-gray-500">The survey you're looking for doesn't exist.</p>
+        <h3 className="text-lg font-medium text-white">Survey not found</h3>
+        <p className="mt-1 text-sm text-slate-400">The survey you're looking for doesn't exist.</p>
       </div>
     );
   }
@@ -137,21 +137,21 @@ const SurveyResponses = () => {
         <div>
           <Link
             to="/faculty/surveys"
-            className="flex items-center text-sm text-gray-400 hover:text-gray-200 mb-4"
+            className="flex items-center text-sm text-slate-400 hover:text-slate-300 mb-4"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back to Surveys
           </Link>
           
           <h1 className="text-2xl font-bold text-white">Survey Responses</h1>
-          <p className="mt-1 text-sm text-gray-300">
+          <p className="mt-1 text-sm text-slate-400">
             View and analyze student responses for "{survey.title}"
           </p>
         </div>
         
         <button
           onClick={exportResponses}
-          className="btn-secondary flex items-center px-4 py-2 rounded-md"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-blue-600 text-white hover:bg-blue-700 px-4 py-2"
         >
           <Download className="h-4 w-4 mr-2" />
           Export CSV
@@ -167,7 +167,7 @@ const SurveyResponses = () => {
                 <Users className="h-6 w-6 text-blue-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Total Responses</p>
+                <p className="text-sm font-medium text-slate-400">Total Responses</p>
                 <p className="text-2xl font-semibold text-white">
                   {responses.length}
                 </p>
@@ -183,7 +183,7 @@ const SurveyResponses = () => {
                 <FileText className="h-6 w-6 text-green-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Questions</p>
+                <p className="text-sm font-medium text-slate-400">Questions</p>
                 <p className="text-2xl font-semibold text-white">
                   {survey.questions.length}
                 </p>
@@ -199,7 +199,7 @@ const SurveyResponses = () => {
                 <TrendingUp className="h-6 w-6 text-purple-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Avg. Time</p>
+                <p className="text-sm font-medium text-slate-400">Avg. Time</p>
                 <p className="text-2xl font-semibold text-white">
                   {responses.length > 0 
                     ? formatDuration(Math.round(responses.reduce((sum, r) => sum + r.completionTime, 0) / responses.length))
@@ -218,7 +218,7 @@ const SurveyResponses = () => {
                 <Calendar className="h-6 w-6 text-yellow-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Published</p>
+                <p className="text-sm font-medium text-slate-400">Published</p>
                 <p className="text-2xl font-semibold text-white">
                   {survey.publishedAt ? formatDate(survey.publishedAt) : 'N/A'}
                 </p>
@@ -232,7 +232,7 @@ const SurveyResponses = () => {
       <div className="card">
         <div className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               placeholder="Search by student name or email..."
@@ -248,7 +248,7 @@ const SurveyResponses = () => {
       <div className="space-y-4">
         {responses.length === 0 ? (
           <div className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
+            <Users className="mx-auto h-12 w-12 text-slate-500" />
             <h3 className="mt-2 text-sm font-medium text-white">
               {searchTerm ? 'No matching responses' : 'No responses yet'}
             </h3>
@@ -266,8 +266,8 @@ const SurveyResponses = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
-                      <div className="h-10 w-10 bg-gray-700 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-300">
+                      <div className="h-10 w-10 bg-slate-700 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-white">
                           {response.userId?.fullName?.charAt(0).toUpperCase() || 'U'}
                         </span>
                       </div>
@@ -298,7 +298,7 @@ const SurveyResponses = () => {
                   <div className="ml-4 flex-shrink-0">
                     <Link
                       to={`/faculty/surveys/${id}/responses/${response.userId._id}`}
-                      className="btn-secondary px-4 py-2 rounded-md"
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-blue-600 text-white hover:bg-blue-700 px-4 py-2"
                     >
                       View Details
                     </Link>
@@ -313,7 +313,7 @@ const SurveyResponses = () => {
       {/* Pagination */}
       {pagination.pages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-slate-400">
             Showing {((pagination.current - 1) * 10) + 1} to{' '}
             {Math.min(pagination.current * 10, pagination.total)} of{' '}
             {pagination.total} results
@@ -334,7 +334,7 @@ const SurveyResponses = () => {
                 onClick={() => handlePageChange(page)}
                 className={`px-4 py-2 text-sm rounded-md transition-colors ${
                   page === pagination.current
-                    ? 'bg-primary-600 text-white'
+                    ? 'bg-blue-600 text-white'
                     : 'btn-outline'
                 }`}
               >

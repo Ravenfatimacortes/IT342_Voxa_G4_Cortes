@@ -40,7 +40,7 @@ router.get('/test-db', async (req, res) => {
     
     console.log('User test result:', { user: user?.email, error: userError });
     
-    // Test 2: Simple user_responses query
+    // Test 2: Simple responses query
     const { data: responses, error: responsesError } = await supabaseAdmin
       .from('user_responses')
       .select('id, survey_id')
@@ -255,7 +255,7 @@ router.get('/responses/:id', async (req, res) => {
     const formattedAnswers = (answersData || []).map(answer => ({
       questionId: answer.question_id,
       answer: answer.answer_text || answer.rating || answer.answer_options,
-      questionType: answer.questions?.type || 'text',
+      questionType: answer.questions?.type === 'multiple' ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
       questionText: answer.questions?.text || `Question ${answer.question_id}`
     }));
 

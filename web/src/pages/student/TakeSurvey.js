@@ -72,28 +72,29 @@ const TakeSurvey = () => {
     }
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async () => {
     try {
       setSubmitting(true);
-      
+
+      const unansweredRequired = survey.questions.filter(q =>
+        q.required && (!answers[q.id] || answers[q.id].toString().trim() === '')
+      );
+      if (unansweredRequired.length > 0) {
+        toast.error(`Please answer all required questions before submitting.`);
+        setSubmitting(false);
+        return;
+      }
+
       const completionTime = Math.floor((Date.now() - startTime) / 1000);
-      const formattedAnswers = Object.entries(data.answers || {}).map(([questionId, answer]) => {
-        const question = survey.questions.find(q => q.id === questionId);
-        return {
-          questionId,
-          answer
-        };
-      });
+      const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
+        questionId,
+        answer
+      }));
 
       const response = await api.post(`/surveys/${id}/responses`, {
         answers: formattedAnswers,
         completionTime
       });
-
-      // Store answers in local storage for retrieval
-      if (response.data.answers) {
-        localStorage.setItem(`survey_${id}_answers_${user.id}`, JSON.stringify(response.data.answers));
-      }
 
       toast.success('Survey submitted successfully!');
       navigate('/dashboard');
@@ -181,7 +182,7 @@ const TakeSurvey = () => {
             {/* Multiple Choice */}
             {currentQuestionData.type === 'MULTIPLE_CHOICE' && (
               <div className="space-y-3">
-                {currentQuestionData.options.map((option, index) => (
+                {(Array.isArray(currentQuestionData.options) ? currentQuestionData.options : []).map((option, index) => (
                   <label
                     key={index}
                     className="flex items-center p-3 border border-slate-700 rounded-lg cursor-pointer hover:bg-slate-700/50 transition-colors"
