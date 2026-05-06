@@ -108,6 +108,88 @@ const Dashboard = () => {
     }
   };
 
+  const exportAllResults = async () => {
+    try {
+      // Fetch all surveys with their responses
+      const response = await api.get('/admin/surveys', { 
+        params: { 
+          limit: 1000, // Get all surveys
+          includeResponses: true 
+        } 
+      });
+
+      const surveys = response.data.surveys || [];
+      
+      // Prepare data for Excel export
+      const exportData = [];
+      
+      for (const survey of surveys) {
+        // Get detailed responses for each survey
+        try {
+          const responsesResponse = await api.get(`/admin/surveys/${survey.id}/responses`, {
+            params: { limit: 1000 }
+          });
+          
+          const responses = responsesResponse.data.responses || [];
+          
+          for (const response of responses) {
+            exportData.push({
+              'Survey Title': survey.title,
+              'Survey Description': survey.description || '',
+              'Survey Status': survey.status,
+              'Student Name': response.userId?.fullName || 'Unknown',
+              'Student Email': response.userId?.email || 'Unknown',
+              'Submitted At': new Date(response.submittedAt).toLocaleString(),
+              'Completion Time': `${Math.floor(response.completionTime / 60)}m ${response.completionTime % 60}s`,
+              'Questions Answered': response.answers?.length || 0,
+              'Total Questions': survey.questions?.length || 0
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching responses for survey ${survey.id}:`, error);
+        }
+      }
+
+      if (exportData.length === 0) {
+        alert('No data to export');
+        return;
+      }
+
+      // Convert to CSV (Excel-compatible)
+      const headers = Object.keys(exportData[0]);
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map(row => 
+          headers.map(header => {
+            const value = row[header];
+            // Escape commas and quotes in values
+            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          }).join(',')
+        )
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `survey_results_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export data. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -127,11 +209,11 @@ const Dashboard = () => {
           </p>
         </div>
         <Link
-          to="/faculty/surveys/new"
+          to="/faculty/responses"
           className="btn-primary flex items-center px-6 py-2 rounded-md"
         >
-          <Plus className="h-5 w-5 mr-2" />
-          Create New Survey
+          <BarChart3 className="h-5 w-5 mr-2" />
+          Response Overview
         </Link>
       </div>
 
@@ -321,21 +403,21 @@ const Dashboard = () => {
                   </div>
                 </Link>
 
-                <Link
-                  to="/faculty/surveys"
-                  className="block p-4 border border-slate-700 rounded-lg hover:bg-slate-700/50 hover:border-blue-500 transition-all group"
+                <button
+                  onClick={exportAllResults}
+                  className="block p-4 border border-slate-700 rounded-lg hover:bg-slate-700/50 hover:border-blue-500 transition-all group w-full text-left"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0 text-2xl">⬇️</div>
                     <div>
                       <p className="text-sm font-medium text-white group-hover:text-blue-400">Export Results</p>
-                      <p className="text-xs text-slate-500">Download as CSV or PDF</p>
+                      <p className="text-xs text-slate-500">Download as Excel</p>
                     </div>
                   </div>
-                </Link>
+                </button>
 
                 <Link
-                  to="/faculty/surveys"
+                  to="/faculty/surveys?status=DRAFT"
                   className="block p-4 border border-slate-700 rounded-lg hover:bg-slate-700/50 hover:border-blue-500 transition-all group"
                 >
                   <div className="flex items-center space-x-3">

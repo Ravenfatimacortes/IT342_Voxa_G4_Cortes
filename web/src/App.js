@@ -31,6 +31,7 @@ import CreateSurvey from './pages/faculty/CreateSurvey';
 import EditSurvey from './pages/faculty/EditSurvey';
 import SurveyResponses from './pages/faculty/SurveyResponses';
 import ResponseView from './pages/faculty/ResponseView';
+import ResponseOverview from './pages/faculty/ResponseOverview';
 import SurveyDetails from './pages/faculty/SurveyDetails';
 
 // Profile pages
@@ -62,8 +63,12 @@ function App() {
               {/* Default redirect based on role */}
               <Route index element={<RoleBasedRedirect />} />
               
-              {/* Student routes */}
-              <Route path="dashboard" element={<StudentDashboard />} />
+              {/* Student routes - restricted to student role only */}
+              <Route path="dashboard" element={
+                <RoleBasedRoute allowedRoles={['student']}>
+                  <StudentDashboard />
+                </RoleBasedRoute>
+              } />
               <Route path="survey/:id" element={<TakeSurvey />} />
               <Route path="my-responses" element={<MyResponses />} />
               <Route path="my-responses/:id" element={<ResponseDetails />} />
@@ -78,6 +83,7 @@ function App() {
                     <Route path="surveys/new" element={<CreateSurvey />} />
                     <Route path="surveys/:id" element={<SurveyDetails />} />
                     <Route path="surveys/:id/edit" element={<EditSurvey />} />
+                    <Route path="responses" element={<ResponseOverview />} />
                     <Route path="surveys/:id/responses" element={<SurveyResponses />} />
                     <Route path="surveys/:id/responses/:userId" element={<ResponseView />} />
                   </Routes>

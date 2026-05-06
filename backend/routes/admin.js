@@ -227,23 +227,26 @@ router.put('/surveys/:id', [
       });
     }
 
-    const survey = await Survey.findOne({
+    // Get existing survey
+    const existingSurvey = await Survey.findOne({
       _id: req.params.id,
       createdBy: req.user._id
     });
 
-    if (!survey) {
+    if (!existingSurvey) {
       return res.status(404).json({ error: 'Survey not found' });
     }
 
-    if (survey.status === 'PUBLISHED') {
+    if (existingSurvey.status === 'PUBLISHED') {
       return res.status(400).json({ error: 'Cannot edit published survey' });
     }
 
     const { title, description, questions } = req.body;
 
-    if (title) survey.title = title;
-    if (description !== undefined) survey.description = description;
+    // Prepare update data
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
     if (questions) {
       // Validate multiple choice questions have options
       for (const question of questions) {
@@ -253,15 +256,28 @@ router.put('/surveys/:id', [
           });
         }
       }
-      survey.questions = questions;
+      updateData.questions = questions;
     }
 
-    await survey.save();
-    await survey.populate('createdBy', 'fullName email');
+    // Update survey using Supabase
+    const { data: updatedSurvey, error: updateError } = await supabaseAdmin
+      .from('surveys')
+      .update(updateData)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('Update survey error:', updateError);
+      return res.status(500).json({ error: 'Server error updating survey' });
+    }
+
+    // Get updated survey with questions
+    const surveyWithQuestions = await Survey.findById(req.params.id, true);
 
     res.json({
       message: 'Survey updated successfully',
-      survey
+      survey: surveyWithQuestions
     });
   } catch (error) {
     console.error('Update survey error:', error);

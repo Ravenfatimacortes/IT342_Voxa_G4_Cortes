@@ -179,14 +179,14 @@ const EditSurvey = () => {
         <div>
           <button
             onClick={() => navigate('/faculty/surveys')}
-            className="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+            className="flex items-center text-sm text-slate-400 hover:text-slate-300 mb-4"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back to Surveys
           </button>
           
-          <h1 className="text-2xl font-bold text-gray-900">Edit Survey</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-white">Edit Survey</h1>
+          <p className="mt-1 text-sm text-slate-400">
             Update survey details and questions
           </p>
         </div>
@@ -196,11 +196,11 @@ const EditSurvey = () => {
         {/* Survey Details */}
         <div className="card">
           <div className="p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Survey Details</h2>
+            <h2 className="text-lg font-medium text-white mb-4">Survey Details</h2>
             
             <div className="space-y-4">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="title" className="block text-sm font-medium text-slate-300">
                   Title *
                 </label>
                 <input
@@ -210,12 +210,12 @@ const EditSurvey = () => {
                   placeholder="Enter survey title"
                 />
                 {errors.title && (
-                  <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                  <p className="mt-1 text-sm text-red-400">{errors.title.message}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="description" className="block text-sm font-medium text-slate-300">
                   Description
                 </label>
                 <textarea
@@ -233,11 +233,11 @@ const EditSurvey = () => {
         <div className="card">
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Questions</h2>
+              <h2 className="text-lg font-medium text-white">Questions</h2>
               <button
                 type="button"
                 onClick={addQuestion}
-                className="btn-outline flex items-center text-sm"
+                className="inline-flex items-center justify-center px-4 py-2 border border-slate-600 bg-transparent text-sm font-medium text-white rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Question
@@ -246,24 +246,24 @@ const EditSurvey = () => {
 
             <div className="space-y-6">
               {fields.map((field, index) => (
-                <div key={field.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={field.id} className="border border-slate-700 rounded-lg p-4">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
-                        <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
+                        <div className="h-8 w-8 bg-slate-700 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-slate-300">
                             {index + 1}
                           </span>
                         </div>
                       </div>
-                      <h3 className="text-sm font-medium text-gray-900">Question {index + 1}</h3>
+                      <h3 className="text-sm font-medium text-white">Question {index + 1}</h3>
                     </div>
                     
                     {fields.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeQuestion(index)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-400 hover:text-red-300"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -272,7 +272,7 @@ const EditSurvey = () => {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-slate-300">
                         Question Text *
                       </label>
                       <input
@@ -287,13 +287,13 @@ const EditSurvey = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">
+                        <label className="block text-sm font-medium text-slate-300">
                           Question Type
                         </label>
                         <select
                           {...register(`questions.${index}.type`)}
                           onChange={(e) => changeQuestionType(index, e.target.value)}
-                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-700 bg-slate-800 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                         >
                           <option value="SHORT_ANSWER">Short Answer</option>
                           <option value="MULTIPLE_CHOICE">Multiple Choice</option>
@@ -304,9 +304,9 @@ const EditSurvey = () => {
                         <input
                           {...register(`questions.${index}.required`)}
                           type="checkbox"
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-600 rounded"
                         />
-                        <label className="text-sm font-medium text-gray-700">
+                        <label className="text-sm font-medium text-slate-300">
                           Required question
                         </label>
                       </div>
@@ -315,7 +315,7 @@ const EditSurvey = () => {
                     {/* Multiple Choice Options */}
                     {watchedQuestions[index]?.type === 'MULTIPLE_CHOICE' && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
                           Options
                         </label>
                         <div className="space-y-2">
@@ -332,7 +332,7 @@ const EditSurvey = () => {
                                 <button
                                   type="button"
                                   onClick={() => removeOption(index, optionIndex)}
-                                  className="text-red-500 hover:text-red-700"
+                                  className="text-red-400 hover:text-red-300"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>
@@ -342,7 +342,7 @@ const EditSurvey = () => {
                           <button
                             type="button"
                             onClick={() => addOption(index)}
-                            className="btn-outline text-sm"
+                            className="inline-flex items-center justify-center px-3 py-1.5 border border-slate-600 bg-transparent text-sm font-medium text-white rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Add Option
@@ -363,11 +363,11 @@ const EditSurvey = () => {
             type="button"
             onClick={handleSubmit(saveChanges)}
             disabled={submitting}
-            className="btn-outline disabled:opacity-50"
+            className="inline-flex items-center justify-center px-6 py-2 border border-slate-600 bg-transparent text-sm font-medium text-white rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
               <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Saving...
               </div>
             ) : (
@@ -381,7 +381,7 @@ const EditSurvey = () => {
           <button
             type="submit"
             disabled={publishing}
-            className="btn-primary disabled:opacity-50"
+            className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-sm font-medium text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {publishing ? (
               <div className="flex items-center">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Plus, 
@@ -16,10 +16,14 @@ import toast from 'react-hot-toast';
 
 const SurveyManagement = () => {
   const { api } = useAuth();
+  const [searchParams] = useSearchParams();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(() => {
+    // Read status from URL parameter, default to 'all'
+    return searchParams.get('status') || 'all';
+  });
   const [pagination, setPagination] = useState({
     current: 1,
     pages: 1,
@@ -147,18 +151,16 @@ const SurveyManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Survey Management</h1>
+          <h1 className="text-2xl font-bold text-white">
+            {statusFilter === 'DRAFT' ? 'Draft Surveys' : 'Survey Management'}
+          </h1>
           <p className="mt-1 text-sm text-gray-300">
-            Create and manage your surveys
+            {statusFilter === 'DRAFT' 
+              ? 'Manage your unpublished surveys' 
+              : 'Create and manage your surveys'
+            }
           </p>
         </div>
-        <Link
-          to="/faculty/surveys/new"
-          className="btn-primary flex items-center px-6 py-2 rounded-md"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Survey
-        </Link>
       </div>
 
       {/* Filters */}
@@ -209,15 +211,6 @@ const SurveyManagement = () => {
                 : 'Create your first survey to get started.'
               }
             </p>
-            {!searchTerm && statusFilter === 'all' && (
-              <Link
-                to="/faculty/surveys/new"
-                className="mt-4 inline-flex items-center btn-primary px-6 py-2 rounded-md"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Survey
-              </Link>
-            )}
           </div>
         ) : (
           surveys.map((survey) => (

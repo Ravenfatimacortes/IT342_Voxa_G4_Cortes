@@ -297,12 +297,60 @@ router.put('/profile', upload.single('profilePicture'), async (req, res) => {
       updated_at: new Date().toISOString()
     };
 
-    // Handle profile picture upload (if column exists)
+    // Handle profile picture upload - try new schema first, fall back to old
     if (req.file) {
       // Convert buffer to base64 for Supabase storage
       const base64Image = req.file.buffer.toString('base64');
       const imageData = `data:${req.file.mimetype};base64,${base64Image}`;
-      updateData.profile_picture = imageData;
+      
+      // Try new schema (profile_pictures table)
+      try {
+        const { data: pictureData, error: pictureError } = await supabaseAdmin
+          .from('profile_pictures')
+          .insert([{
+            user_id: userId,
+            file_name: req.file.originalname,
+            file_path: imageData,
+            file_size: req.file.size,
+            mime_type: req.file.mimetype,
+            is_active: true
+          }])
+          .select()
+          .single();
+        
+        if (pictureError) {
+          throw pictureError;
+        }
+        
+        // Deactivate old profile pictures
+        await supabaseAdmin
+          .from('profile_pictures')
+          .update({ is_active: false })
+          .eq('user_id', userId)
+          .neq('id', pictureData.id);
+        
+        console.log('Profile picture uploaded successfully (new schema):', pictureData);
+      } catch (err) {
+        console.log('New schema failed, trying fallback:', err.message);
+        
+        // Fallback: try updating users table directly (old schema)
+        try {
+          const { error: fallbackError } = await supabaseAdmin
+            .from('users')
+            .update({ profile_picture: imageData })
+            .eq('id', userId);
+          
+          if (fallbackError) {
+            console.error('Both profile picture methods failed:', fallbackError);
+            // Continue without profile picture update
+          } else {
+            console.log('Profile picture updated successfully (fallback method)');
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback method also failed:', fallbackErr);
+          // Continue without profile picture update
+        }
+      }
     }
 
     // Update user in Supabase
@@ -318,24 +366,10 @@ router.put('/profile', upload.single('profilePicture'), async (req, res) => {
       error = result.error;
     } catch (err) {
       console.error('Update profile error:', err);
-      // Handle case where profile_picture column doesn't exist
-      if (err.message && err.message.includes('profile_picture')) {
-        // Try again without profile picture
-        const { profile_picture, ...updateDataWithoutPicture } = updateData;
-        const result = await supabaseAdmin
-          .from('users')
-          .update(updateDataWithoutPicture)
-          .eq('id', userId)
-          .select()
-          .single();
-        data = result.data;
-        error = result.error;
-      } else {
-        return res.status(500).json({ 
-          error: 'Server error updating profile',
-          details: err.message 
-        });
-      }
+      return res.status(500).json({ 
+        error: 'Server error updating profile',
+        details: err.message 
+      });
     }
 
     if (error) {
@@ -346,13 +380,43 @@ router.put('/profile', upload.single('profilePicture'), async (req, res) => {
       });
     }
 
+    // Get profile picture - try new schema first, fall back to old
+    let profilePicture = null;
+    try {
+      // Try new schema (profile_pictures table)
+      const { data: pictureData } = await supabaseAdmin
+        .from('profile_pictures')
+        .select('file_path')
+        .eq('user_id', data.id)
+        .eq('is_active', true)
+        .single();
+      
+      profilePicture = pictureData?.file_path || null;
+    } catch (err) {
+      console.log('New schema profile picture fetch failed, trying fallback:', err.message);
+      
+      // Fallback: try getting from users table (old schema)
+      try {
+        const { data: userData } = await supabaseAdmin
+          .from('users')
+          .select('profile_picture')
+          .eq('id', data.id)
+          .single();
+        
+        profilePicture = userData?.profile_picture || null;
+      } catch (fallbackErr) {
+        console.error('Both profile picture fetch methods failed:', fallbackErr);
+        profilePicture = null;
+      }
+    }
+
     // Format the response for frontend
     const formattedUser = {
       id: data.id,
       fullName: `${data.first_name} ${data.last_name}`.trim(),
       email: data.email,
       role: data.role,
-      profilePicture: data.profile_picture,
+      profilePicture: profilePicture,
       createdAt: data.created_at
     };
     
