@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { supabaseAdmin } = require('./config/database');
+const { supabaseAdmin } = require('../config/database');
 
 async function checkResponsesTable() {
   try {

@@ -7,6 +7,11 @@ const passport = require('passport');
 const session = require('express-session');
 require('dotenv').config();
 
+// Fix SSL certificate issues in development
+if (process.env.NODE_ENV === 'development') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 const { connectDB, supabase } = require('./config/database');
 const authRoutes = require('./routes/auth-working');
 const surveyRoutes = require('./routes/surveys');

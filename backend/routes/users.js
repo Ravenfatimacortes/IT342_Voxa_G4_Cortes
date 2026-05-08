@@ -440,8 +440,14 @@ router.put('/password', [
     .withMessage('New password must contain at least one uppercase letter, one lowercase letter, and one number')
 ], async (req, res) => {
   try {
+    console.log('=== PASSWORD CHANGE ATTEMPT ===');
+    console.log('Request body:', { ...req.body, currentPassword: '[REDACTED]', newPassword: '[REDACTED]' });
+    console.log('User ID:', req.user?.userId);
+    console.log('User object:', { ...req.user, password: '[REDACTED]' });
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation failed:', errors.array());
       return res.status(400).json({
         error: 'Validation failed',
         details: errors.array()
@@ -451,6 +457,8 @@ router.put('/password', [
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.userId;
 
+    console.log('Fetching user from database...');
+
     // Get user with password from Supabase
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
@@ -458,37 +466,128 @@ router.put('/password', [
       .eq('id', userId)
       .single();
 
+    console.log('User query result:', { 
+      found: !!user, 
+      error: userError?.message,
+      userId: userId 
+    });
+
     if (userError || !user) {
+      console.log('❌ User not found');
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // For Supabase, we'll use the admin client to update the password
-    // Note: In a production environment, you might want to add additional verification
-    
-    // Update password using Supabase Auth Admin API
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.email, // Use email as identifier for Supabase Auth
-      { password: newPassword }
-    );
+    console.log('User found, comparing passwords...');
+
+    // Import bcrypt for password comparison
+    const bcrypt = require('bcryptjs');
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    console.log('Password comparison result:', isCurrentPasswordValid);
+
+    if (!isCurrentPasswordValid) {
+      console.log('❌ Current password incorrect');
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+
+    console.log('Current password valid, hashing new password...');
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+    console.log('New password hashed, updating database...');
+
+    // Update password in users table with multiple fallback strategies
+    let updateError;
+    let updateSuccess = false;
+
+    // Strategy 1: Try direct update
+    try {
+      console.log('Trying direct update...');
+      const result = await supabaseAdmin
+        .from('users')
+        .update({ 
+          password: hashedNewPassword
+        })
+        .eq('id', userId);
+      
+      if (!result.error) {
+        updateSuccess = true;
+        console.log('✅ Direct update successful');
+      } else {
+        updateError = result.error;
+        console.log('❌ Direct update failed:', result.error.message);
+      }
+    } catch (err) {
+      updateError = err;
+      console.log('❌ Direct update exception:', err.message);
+    }
+
+    // Strategy 2: If direct update fails due to social_links, try without any additional fields
+    if (!updateSuccess && updateError && updateError.message && updateError.message.includes('social_links')) {
+      console.log('Trying minimal update to avoid triggers...');
+      
+      try {
+        // Try updating with minimal data to avoid triggering other operations
+        const { error: minimalError } = await supabaseAdmin
+          .from('users')
+          .update({ password: hashedNewPassword })
+          .eq('id', userId)
+          .select('id')
+          .single();
+        
+        if (!minimalError) {
+          updateSuccess = true;
+          updateError = null;
+          console.log('✅ Minimal update successful');
+        }
+      } catch (minimalErr) {
+        console.log('❌ Minimal update failed:', minimalErr.message);
+      }
+    }
+
+    // Strategy 3: Last resort - try to update with a raw SQL approach
+    if (!updateSuccess && updateError && updateError.message && updateError.message.includes('social_links')) {
+      console.log('Trying raw SQL approach...');
+      
+      try {
+        // Use a raw SQL update through the Supabase client
+        const { error: rawError } = await supabaseAdmin
+          .rpc('execute_sql', {
+            query: `UPDATE users SET password = $1 WHERE id = $2`,
+            params: [hashedNewPassword, userId]
+          });
+        
+        if (!rawError) {
+          updateSuccess = true;
+          updateError = null;
+          console.log('✅ Raw SQL update successful');
+        } else {
+          console.log('❌ Raw SQL update failed:', rawError.message);
+        }
+      } catch (rawErr) {
+        console.log('❌ Raw SQL update exception:', rawErr.message);
+      }
+    }
 
     if (updateError) {
-      console.error('Password update error:', updateError);
-      // If the error is about user not found in auth, the password might be stored in the custom users table
-      if (updateError.message.includes('User not found')) {
-        // For now, return a success message but log the issue
-        console.log('Password update skipped - user not found in Supabase Auth');
-        return res.json({ message: 'Password update completed' });
-      }
+      console.error('❌ Password update error:', updateError);
       return res.status(500).json({ 
         error: 'Server error updating password',
         details: updateError.message 
       });
     }
 
+    console.log('✅ Password updated successfully');
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ error: 'Server error changing password' });
+    console.error('❌ Change password error:', error);
+    res.status(500).json({ 
+      error: 'Server error changing password',
+      details: error.message 
+    });
   }
 });
 

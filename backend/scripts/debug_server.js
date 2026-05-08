@@ -1,5 +1,5 @@
 // Debug script to test the database connection
-const { supabaseAdmin } = require('./config/database');
+const { supabaseAdmin } = require('../config/database');
 
 async function debugDatabase() {
   console.log('=== Database Debug Test ===');

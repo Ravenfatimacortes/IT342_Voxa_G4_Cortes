@@ -34,8 +34,6 @@ const Profile = () => {
       lastName: user?.fullName?.split(' ')[1] || '',
       email: user?.email || '',
       studentId: user?.studentId || '2021-10342',
-      yearLevel: user?.yearLevel || '3rd Year',
-      department: user?.department || 'Faculty of Engineering',
     }
   });
 
@@ -89,8 +87,6 @@ const Profile = () => {
       const formData = new FormData();
       const fullName = `${data.firstName} ${data.lastName}`;
       formData.append('fullName', fullName);
-      formData.append('yearLevel', data.yearLevel);
-      formData.append('department', data.department);
       if (profilePicture) {
         formData.append('profilePicture', profilePicture);
       }
@@ -198,7 +194,6 @@ const Profile = () => {
               </div>
               
               <div className="space-y-1 text-sm text-slate-400 mb-4">
-                <p>BSCS - 3rd Year</p>
                 <p>{user?.email || 'juan.santos@university.edu'}</p>
                 <p>Joined Jan 2024</p>
                 <p>ID: {user?.studentId || '2021-10342'}</p>
@@ -311,32 +306,6 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    YEAR LEVEL
-                  </label>
-                  <select {...registerProfile('yearLevel')} className="input">
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                    <option value="5th Year">5th Year</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    DEPARTMENT
-                  </label>
-                  <select {...registerProfile('department')} className="input">
-                    <option value="Faculty of Engineering">Faculty of Engineering</option>
-                    <option value="Faculty of Arts and Sciences">Faculty of Arts and Sciences</option>
-                    <option value="Faculty of Business">Faculty of Business</option>
-                    <option value="Faculty of Education">Faculty of Education</option>
-                  </select>
-                </div>
-              </div>
 
               <div className="pt-4 border-t border-slate-700">
                 <p className="text-xs text-slate-400 mb-4">Changes apply immediately.</p>

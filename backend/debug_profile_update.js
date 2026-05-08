@@ -1,99 +1,89 @@
-// Debug script to test profile update functionality
 const { supabaseAdmin } = require('./config/database');
 
 async function debugProfileUpdate() {
   try {
-    console.log('=== PROFILE UPDATE DEBUG ===');
+    console.log('Debugging profile update...');
     
-    // Test 1: Check if profile_pictures table exists
-    console.log('\n1. Checking profile_pictures table...');
-    const { data: tables, error: tablesError } = await supabaseAdmin
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'profile_pictures');
+    // Test 1: Check if users table exists and get a sample user
+    console.log('\n=== Test 1: Check users table ===');
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('users')
+      .select('id, first_name, last_name, email')
+      .limit(1);
     
-    if (tablesError) {
-      console.error('Error checking tables:', tablesError);
-    } else {
-      console.log('profile_pictures table exists:', tables.length > 0);
-    }
+    console.log('Users table result:', { users: users?.length, error: usersError?.message });
     
-    // Test 2: Check if users table has bio column
-    console.log('\n2. Checking users table columns...');
-    const { data: columns, error: columnsError } = await supabaseAdmin
-      .from('information_schema.columns')
-      .select('column_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'users')
-      .eq('column_name', 'bio');
-    
-    if (columnsError) {
-      console.error('Error checking columns:', columnsError);
-    } else {
-      console.log('bio column exists:', columns.length > 0);
-    }
-    
-    // Test 3: Try to select from profile_pictures
-    console.log('\n3. Testing profile_pictures query...');
-    try {
-      const { data: pictures, error: picturesError } = await supabaseAdmin
-        .from('profile_pictures')
-        .select('*')
-        .limit(1);
-      
-      if (picturesError) {
-        console.error('Error querying profile_pictures:', picturesError);
-      } else {
-        console.log('profile_pictures query successful, rows:', pictures.length);
-      }
-    } catch (err) {
-      console.error('Exception querying profile_pictures:', err.message);
-    }
-    
-    // Test 4: Try to insert a test record
-    console.log('\n4. Testing profile_pictures insert...');
-    try {
-      const testData = {
-        user_id: 1, // Use a test user ID
-        file_name: 'test.jpg',
-        file_path: 'data:image/jpeg;base64,test',
-        file_size: 100,
-        mime_type: 'image/jpeg',
-        is_active: true
-      };
-      
-      const { data: insertData, error: insertError } = await supabaseAdmin
-        .from('profile_pictures')
-        .insert([testData])
+    if (!users || users.length === 0) {
+      console.log('No users found, creating test user...');
+      const { data: newUser, error: createError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          email: 'test@example.com',
+          first_name: 'Test',
+          last_name: 'User',
+          password: 'hashedpassword',
+          role: 'student'
+        })
         .select()
         .single();
       
-      if (insertError) {
-        console.error('Error inserting into profile_pictures:', insertError);
-      } else {
-        console.log('profile_pictures insert successful:', insertData.id);
-        
-        // Clean up test record
-        await supabaseAdmin
-          .from('profile_pictures')
-          .delete()
-          .eq('id', insertData.id);
-      }
-    } catch (err) {
-      console.error('Exception inserting into profile_pictures:', err.message);
+      console.log('Create user result:', { user: newUser, error: createError?.message });
     }
     
-    console.log('\n=== DEBUG COMPLETE ===');
+    // Get a user to test with
+    const { data: testUser, error: testUserError } = await supabaseAdmin
+      .from('users')
+      .select('id, first_name, last_name')
+      .eq('email', 'test@example.com')
+      .single();
+    
+    if (testUserError || !testUser) {
+      console.error('Could not find test user:', testUserError?.message);
+      return;
+    }
+    
+    console.log('Testing with user:', testUser);
+    
+    // Test 2: Try a simple update without any triggers
+    console.log('\n=== Test 2: Simple update test ===');
+    const updateData = {
+      first_name: 'John',
+      last_name: 'Doe',
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('Update data:', updateData);
+    
+    const { data: updateResult, error: updateError } = await supabaseAdmin
+      .from('users')
+      .update(updateData)
+      .eq('id', testUser.id)
+      .select()
+      .single();
+    
+    console.log('Update result:', { 
+      success: !!updateResult, 
+      error: updateError?.message,
+      details: updateError?.details 
+    });
+    
+    // Test 3: Check if there are any triggers or RLS policies
+    console.log('\n=== Test 3: Check database structure ===');
+    
+    // Check if profile_activity_log table exists
+    const { data: logTable, error: logError } = await supabaseAdmin
+      .from('profile_activity_log')
+      .select('count')
+      .limit(1);
+    
+    console.log('profile_activity_log table check:', { 
+      exists: !logError || !logError.message?.includes('does not exist'), 
+      error: logError?.message 
+    });
     
   } catch (error) {
-    console.error('Debug script error:', error);
+    console.error('Debug error:', error);
   }
 }
 
-debugProfileUpdate().then(() => {
-  process.exit(0);
-}).catch((error) => {
-  console.error('Debug script failed:', error);
-  process.exit(1);
-});
+debugProfileUpdate();
