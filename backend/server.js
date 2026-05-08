@@ -13,12 +13,12 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const { connectDB, supabase } = require('./config/database');
-const authRoutes = require('./routes/auth-working');
-const surveyRoutes = require('./routes/surveys');
-const userRoutes = require('./routes/users');
-const adminRoutes = require('./routes/admin');
-const googleAuthRoutes = require('./routes/auth-google');
-const postRoutes = require('./routes/posts');
+const authRoutes = require('./features/auth/routes/auth');
+const surveyRoutes = require('./features/surveys/routes/surveys');
+const userRoutes = require('./features/users/routes/users');
+const adminRoutes = require('./features/admin/routes/admin');
+const googleAuthRoutes = require('./features/auth/routes/auth-google');
+const postRoutes = require('./features/posts/routes/posts');
 
 const app = express();
 

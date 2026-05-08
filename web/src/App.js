@@ -8,37 +8,37 @@ import RoleBasedRedirect from './components/RoleBasedRedirect';
 import Layout from './components/Layout';
 
 // Auth pages
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import AuthSuccess from './pages/auth/AuthSuccess';
-import ForgotPassword from './pages/auth/ForgotPassword';
-import ResetPassword from './pages/auth/ResetPassword';
+import Login from './features/auth/pages/Login';
+import Register from './features/auth/pages/Register';
+import AuthSuccess from './features/auth/pages/AuthSuccess';
+import ForgotPassword from './features/auth/pages/ForgotPassword';
+import ResetPassword from './features/auth/pages/ResetPassword';
 
 // Public pages
-import About from './pages/About';
+import About from './features/users/pages/About';
 
 // Student pages
-import StudentDashboard from './pages/student/Dashboard';
-import TakeSurvey from './pages/student/TakeSurvey';
-import MyResponses from './pages/student/MyResponses';
-import ResponseDetails from './pages/student/ResponseDetails';
+import StudentDashboard from './features/users/pages/StudentDashboard';
+import TakeSurvey from './features/surveys/pages/TakeSurvey';
+import MyResponses from './features/surveys/pages/MyResponses';
+import ResponseDetails from './features/surveys/pages/ResponseDetails';
 
 // Faculty pages
-import FacultyDashboard from './pages/faculty/Dashboard';
-import FacultyFeed from './pages/faculty/Feed';
-import SurveyManagement from './pages/faculty/SurveyManagement';
-import CreateSurvey from './pages/faculty/CreateSurvey';
-import EditSurvey from './pages/faculty/EditSurvey';
-import SurveyResponses from './pages/faculty/SurveyResponses';
-import ResponseView from './pages/faculty/ResponseView';
-import ResponseOverview from './pages/faculty/ResponseOverview';
-import SurveyDetails from './pages/faculty/SurveyDetails';
+import FacultyDashboard from './features/admin/pages/Dashboard';
+import FacultyFeed from './features/posts/pages/Feed';
+import SurveyManagement from './features/surveys/pages/SurveyManagement';
+import CreateSurvey from './features/surveys/pages/CreateSurvey';
+import EditSurvey from './features/surveys/pages/EditSurvey';
+import SurveyResponses from './features/surveys/pages/SurveyResponses';
+import ResponseView from './features/surveys/pages/ResponseView';
+import ResponseOverview from './features/surveys/pages/ResponseOverview';
+import SurveyDetails from './features/surveys/pages/SurveyDetails';
 
 // Profile pages
-import Profile from './pages/Profile';
+import Profile from './features/users/pages/Profile';
 
 // Common pages
-import NotFound from './pages/NotFound';
+import NotFound from './features/users/pages/NotFound';
 
 function App() {
   return (

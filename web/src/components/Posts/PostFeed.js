@@ -612,20 +612,25 @@ const PostFeed = () => {
         </div>
 
         {showCreatePost && (
-          <form onSubmit={newPost.type === 'survey' ? createSurveyPost : createPost} className="space-y-4 border-t pt-4">
-            <select
-              value={newPost.type}
-              onChange={(e) => {
-                setNewPost({ ...newPost, type: e.target.value });
-                setShowSurveyMaker(e.target.value === 'survey');
-              }}
-              className="w-full p-2 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg text-white"
-            >
-              <option value="general">General Post</option>
-              <option value="survey">Survey Related</option>
-            </select>
+          <form onSubmit={createPost} className="space-y-4 border-t pt-4">
+            {/* Only show general post option for students */}
+            {user?.role === 'teacher' || user?.role === 'faculty' || user?.role === 'admin' ? (
+              <select
+                value={newPost.type}
+                onChange={(e) => {
+                  setNewPost({ ...newPost, type: e.target.value });
+                  setShowSurveyMaker(e.target.value === 'survey');
+                }}
+                className="w-full p-2 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg text-white"
+              >
+                <option value="general">General Post</option>
+                <option value="survey">Survey Related</option>
+              </select>
+            ) : (
+              <input type="hidden" value="general" />
+            )}
 
-            {newPost.type === 'survey' && (
+            {(newPost.type === 'survey' && (user?.role === 'teacher' || user?.role === 'faculty' || user?.role === 'admin')) && (
               <input
                 type="text"
                 placeholder="Survey title (required)"
@@ -637,7 +642,7 @@ const PostFeed = () => {
             )}
 
             <textarea
-              placeholder={newPost.type === 'survey' ? 'Survey description...' : 'Share your thoughts...'}
+              placeholder={newPost.type === 'survey' && (user?.role === 'teacher' || user?.role === 'faculty' || user?.role === 'admin') ? 'Survey description...' : 'Share your thoughts...'}
               value={newPost.content}
               onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
               className="w-full p-3 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg resize-none text-white placeholder-gray-400"
@@ -645,8 +650,8 @@ const PostFeed = () => {
               required
             />
 
-            {/* Survey Maker */}
-            {showSurveyMaker && (
+            {/* Survey Maker - Only for teachers/faculty/admin */}
+            {showSurveyMaker && (user?.role === 'teacher' || user?.role === 'faculty' || user?.role === 'admin') && (
               <div className="space-y-4 border-t pt-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-white">Survey Questions</h4>
@@ -716,7 +721,7 @@ const PostFeed = () => {
                 type="submit"
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
               >
-                {newPost.type === 'survey' ? 'Create Survey Post' : 'Post'}
+                {newPost.type === 'survey' && (user?.role === 'teacher' || user?.role === 'faculty' || user?.role === 'admin') ? 'Create Survey Post' : 'Post'}
               </button>
             </div>
           </form>
