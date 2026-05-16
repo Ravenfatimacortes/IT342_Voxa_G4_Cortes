@@ -14,6 +14,8 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(user?.profilePicture || null);
+  const [statistics, setStatistics] = useState({ completed: 0, responseRate: 0, pending: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
   const fileInputRef = useRef(null);
 
   // Update preview URL when user data changes
@@ -23,6 +25,25 @@ const Profile = () => {
     }
   }, [user?.profilePicture]);
 
+  // Fetch user statistics
+  React.useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        setStatsLoading(true);
+        const response = await api.get('/users/statistics');
+        setStatistics(response.data);
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchStatistics();
+    }
+  }, [user, api]);
+
   const {
     register: registerProfile,
     handleSubmit: handleProfileSubmit,
@@ -30,10 +51,13 @@ const Profile = () => {
     reset: resetProfile,
   } = useForm({
     defaultValues: {
-      firstName: user?.fullName?.split(' ')[0] || '',
-      lastName: user?.fullName?.split(' ')[1] || '',
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
       email: user?.email || '',
-      studentId: user?.studentId || '2021-10342',
+      phone: user?.phone || '',
+      bio: user?.bio || '',
+      department: user?.department || '',
+      studentId: user?.studentId || '',
     }
   });
 
@@ -87,6 +111,11 @@ const Profile = () => {
       const formData = new FormData();
       const fullName = `${data.firstName} ${data.lastName}`;
       formData.append('fullName', fullName);
+      formData.append('firstName', data.firstName);
+      formData.append('lastName', data.lastName);
+      formData.append('phone', data.phone || '');
+      formData.append('bio', data.bio || '');
+      formData.append('department', data.department || '');
       if (profilePicture) {
         formData.append('profilePicture', profilePicture);
       }
@@ -189,28 +218,34 @@ const Profile = () => {
               <div className="flex items-center space-x-3 mb-2">
                 <h2 className="text-xl font-bold text-white">{user?.fullName || 'Juan Santos'}</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                  Student - Faculty of Engineering
+                  {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Student'}
                 </span>
               </div>
               
               <div className="space-y-1 text-sm text-slate-400 mb-4">
                 <p>{user?.email || 'juan.santos@university.edu'}</p>
-                <p>Joined Jan 2024</p>
+                <p>Joined {user?.createdAt ? formatDate(user.createdAt) : 'January 1, 2024'}</p>
                 <p>ID: {user?.studentId || '2021-10342'}</p>
               </div>
 
               {/* Statistics */}
               <div className="flex space-x-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">8</div>
+                  <div className="text-2xl font-bold text-white">
+                    {statsLoading ? '-' : statistics.completed}
+                  </div>
                   <div className="text-xs text-slate-400">Completed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-400">94%</div>
+                  <div className="text-2xl font-bold text-emerald-400">
+                    {statsLoading ? '-' : `${statistics.responseRate}%`}
+                  </div>
                   <div className="text-xs text-slate-400">Response Rate</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-400">3</div>
+                  <div className="text-2xl font-bold text-orange-400">
+                    {statsLoading ? '-' : statistics.pending}
+                  </div>
                   <div className="text-xs text-slate-400">Pending</div>
                 </div>
               </div>
@@ -304,6 +339,53 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    PHONE NUMBER
+                  </label>
+                  <input
+                    {...registerProfile('phone')}
+                    type="tel"
+                    className="input"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                  {profileErrors.phone && (
+                    <p className="mt-1 text-sm text-red-400">{profileErrors.phone.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    DEPARTMENT
+                  </label>
+                  <input
+                    {...registerProfile('department')}
+                    type="text"
+                    className="input"
+                    placeholder="e.g., Computer Science"
+                  />
+                  {profileErrors.department && (
+                    <p className="mt-1 text-sm text-red-400">{profileErrors.department.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  BIO
+                </label>
+                <textarea
+                  {...registerProfile('bio')}
+                  className="input resize-none"
+                  placeholder="Tell us about yourself..."
+                  rows="3"
+                />
+                {profileErrors.bio && (
+                  <p className="mt-1 text-sm text-red-400">{profileErrors.bio.message}</p>
+                )}
               </div>
 
 

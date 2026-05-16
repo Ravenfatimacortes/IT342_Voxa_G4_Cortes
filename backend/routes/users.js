@@ -86,6 +86,59 @@ router.get('/test-db', async (req, res) => {
   }
 });
 
+// Get user statistics
+router.get('/statistics', async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get completed surveys count
+    const { count: completedCount, error: completedError } = await supabaseAdmin
+      .from('user_responses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_completed', true);
+
+    if (completedError) {
+      console.error('Error fetching completed count:', completedError);
+    }
+
+    // Get surveys user has already responded to
+    const { data: userResponses } = await supabaseAdmin
+      .from('user_responses')
+      .select('survey_id')
+      .eq('user_id', userId);
+
+    const respondedSurveyIds = userResponses ? userResponses.map(r => r.survey_id) : [];
+
+    // Get total published surveys
+    const { count: totalSurveys, error: totalSurveysError } = await supabaseAdmin
+      .from('surveys')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'PUBLISHED');
+
+    if (totalSurveysError) {
+      console.error('Error fetching total surveys:', totalSurveysError);
+    }
+
+    // Calculate pending surveys (published surveys not yet responded to)
+    const pendingCount = Math.max(0, (totalSurveys || 0) - respondedSurveyIds.length);
+
+    // Calculate response rate
+    const responseRate = totalSurveys && totalSurveys > 0
+      ? Math.round((respondedSurveyIds.length / totalSurveys) * 100)
+      : 0;
+
+    res.json({
+      completed: completedCount || 0,
+      responseRate: responseRate,
+      pending: pendingCount
+    });
+  } catch (error) {
+    console.error('Get user statistics error:', error);
+    res.status(500).json({ error: 'Server error fetching statistics' });
+  }
+});
+
 // Get user's responses
 router.get('/responses', async (req, res) => {
   try {
@@ -283,17 +336,20 @@ router.get('/responses/:id', async (req, res) => {
 // Update user profile
 router.put('/profile', upload.single('profilePicture'), async (req, res) => {
   try {
-    const { fullName } = req.body;
+    const { fullName, firstName, lastName, phone, bio, department } = req.body;
     const userId = req.user.userId;
     
     // Parse fullName into first and last name
-    const nameParts = fullName ? fullName.trim().split(' ') : ['', ''];
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
+    const nameParts = fullName ? fullName.trim().split(' ') : [firstName || '', lastName || ''];
+    const parsedFirstName = nameParts[0] || firstName || '';
+    const parsedLastName = nameParts.slice(1).join(' ') || lastName || '';
     
     const updateData = {
-      first_name: firstName,
-      last_name: lastName,
+      first_name: parsedFirstName,
+      last_name: parsedLastName,
+      phone: phone || null,
+      bio: bio || null,
+      department: department || null,
       updated_at: new Date().toISOString()
     };
 
@@ -413,9 +469,15 @@ router.put('/profile', upload.single('profilePicture'), async (req, res) => {
     // Format the response for frontend
     const formattedUser = {
       id: data.id,
+      firstName: data.first_name,
+      lastName: data.last_name,
       fullName: `${data.first_name} ${data.last_name}`.trim(),
       email: data.email,
       role: data.role,
+      phone: data.phone,
+      bio: data.bio,
+      department: data.department,
+      studentId: data.student_id,
       profilePicture: profilePicture,
       createdAt: data.created_at
     };
