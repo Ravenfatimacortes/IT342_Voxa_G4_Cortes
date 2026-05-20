@@ -17,125 +17,166 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import ph.net.mobile.R
-import ph.net.mobile.models.BackendUser
+import ph.net.mobile.models.AuthResponse
+import ph.net.mobile.models.User
 import ph.net.mobile.repository.AuthRepository
 import ph.net.mobile.utils.TiledDrawable
 
 class Login : AppCompatActivity() {
-
+    
     private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
     private lateinit var loginButton: Button
     private lateinit var registerText: TextView
     private lateinit var authRepository: AuthRepository
     private lateinit var sharedPreferences: SharedPreferences
-
-    // Role passed back from Register so we can navigate correctly right after sign-up
-    private var pendingRole: String? = null
-
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-
+        
+        // Initialize repository and shared preferences
         authRepository = AuthRepository()
         sharedPreferences = getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
-
+        
+        // Setup UI components
         setupUI()
+        
+        // Start background animations
         startOrbAnimations()
+        
+        // Setup Tiled Background
         setupTiledBackground()
+        
+        // Check if user is already logged in
         checkLoginStatus()
     }
 
-    // ── Already-logged-in check ───────────────────────────────────────────────
+    private fun startOrbAnimations() {
+        val orb1 = findViewById<View>(R.id.orb1)
+        val orb2 = findViewById<View>(R.id.orb2)
+        val orb3 = findViewById<View>(R.id.orb3)
 
-    private fun checkLoginStatus() {
-        val token = sharedPreferences.getString("auth_token", null) ?: return
-
-        if (token == "mock_admin_token") {
-            startActivity(Intent(this, AdminDashboard::class.java))
-            finish()
-            return
-        }
-
-        val savedRole = sharedPreferences.getString("user_role", "student") ?: "student"
-        startActivity(dashboardIntent(savedRole))
-        finish()
+        animateOrb(orb1, 30000L, 100f, -100f)
+        animateOrb(orb2, 40000L, -120f, 80f)
+        animateOrb(orb3, 50000L, 60f, 160f)
     }
 
-    // ── Register launcher ─────────────────────────────────────────────────────
+    private fun setupTiledBackground() {
+        val waveBackground = findViewById<View>(R.id.waveBackground)
+        waveBackground.background = TiledDrawable.create(this, R.drawable.ic_wave_pattern)
+    }
 
-    private val registerLauncher =
-        registerForActivityResult(
-            androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val data = result.data
-                val email    = data?.getStringExtra("email")
-                val password = data?.getStringExtra("password")
-                val role     = data?.getStringExtra("role")
+    private fun animateOrb(view: View, duration: Long, deltaX: Float, deltaY: Float) {
+        val pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0f, deltaX, 0f)
+        val pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f, deltaY, 0f)
+        val pvhScaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.5f, 1f)
+        val pvhScaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.5f, 1f)
 
-                if (email != null && password != null) {
-                    pendingRole = role          // fallback in case login response is slow
-                    emailEditText.setText(email)
-                    passwordEditText.setText(password)
-                    performLogin()
+        ObjectAnimator.ofPropertyValuesHolder(view, pvhX, pvhY, pvhScaleX, pvhScaleY).apply {
+            this.duration = duration
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
+            interpolator = AccelerateDecelerateInterpolator()
+            start()
+        }
+    }
+    
+    private fun checkLoginStatus() {
+        val token = sharedPreferences.getString("auth_token", null)
+        if (token != null) {
+            if (token == "mock_admin_token") {
+                val intent = Intent(this, AdminDashboard::class.java)
+                startActivity(intent)
+                finish()
+                return
+            }
+
+            // Verify token with backend
+            lifecycleScope.launch {
+                val result = authRepository.verifyToken(token)
+                if (result.isSuccess) {
+                    // Token is valid, navigate to main activity
+                    val user = result.getOrNull()?.actualUser
+                    navigateToMain(user)
+                } else {
+                    // Token is invalid, clear it and show login
+                    clearAuthData()
                 }
             }
         }
-
-    // ── UI setup ──────────────────────────────────────────────────────────────
-
-    private fun setupUI() {
-        emailEditText  = findViewById(R.id.emailEditText)
-        passwordEditText = findViewById(R.id.passwordEditText)
-        loginButton    = findViewById(R.id.loginButton)
-        registerText   = findViewById(R.id.registerText)
-
-        loginButton.setOnClickListener { performLogin() }
-        registerText.setOnClickListener {
-            registerLauncher.launch(Intent(this, Register::class.java))
+    }
+    
+    private val registerLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val data = result.data
+            val email = data?.getStringExtra("email")
+            val password = data?.getStringExtra("password")
+            
+            if (email != null && password != null) {
+                emailEditText.setText(email)
+                passwordEditText.setText(password)
+                performLogin()
+            }
         }
     }
 
-    // ── Login ─────────────────────────────────────────────────────────────────
+    private fun setupUI() {
+        // Initialize UI components
+        emailEditText = findViewById(R.id.emailEditText)
+        passwordEditText = findViewById(R.id.passwordEditText)
+        loginButton = findViewById(R.id.loginButton)
+        registerText = findViewById(R.id.registerText)
+        
+        loginButton.setOnClickListener {
+            performLogin()
+        }
 
+        registerText.setOnClickListener {
+            val intent = Intent(this, Register::class.java)
+            registerLauncher.launch(intent)
+        }
+    }
+    
     private fun performLogin() {
-        val email    = emailEditText.text.toString().trim()
+        val email = emailEditText.text.toString().trim()
         val password = passwordEditText.text.toString().trim()
-
+        
         if (email.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Hardcoded admin shortcut
+        // Hardcoded Admin Access
         if (email == "admin" && password == "password123") {
-            sharedPreferences.edit()
-                .putString("auth_token", "mock_admin_token")
-                .putString("user_id",    "admin-001")
-                .putString("user_email", "admin")
-                .putString("user_name",  "Super Admin")
-                .putString("user_role",  "admin")
-                .apply()
+            val editor = sharedPreferences.edit()
+            editor.putString("auth_token", "mock_admin_token")
+            editor.putString("user_id", "admin-001")
+            editor.putString("user_email", "admin")
+            editor.putString("user_name", "Super Admin")
+            editor.putString("user_role", "Admin")
+            editor.apply()
+
             Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, AdminDashboard::class.java))
+            val intent = Intent(this, AdminDashboard::class.java)
+            startActivity(intent)
             finish()
             return
         }
-
+        
         lifecycleScope.launch {
             try {
                 loginButton.isEnabled = false
                 val result = authRepository.login(email, password)
-
+                
                 result.fold(
                     onSuccess = { response ->
-                        if (response.success && response.token != null) {
+                        if (response.success && response.accessToken != null) {
                             Toast.makeText(this@Login, "Login successful!", Toast.LENGTH_SHORT).show()
-                            saveAuthData(response.token, response.user)
-                            navigateToMain(response.user?.role)
+                            saveAuthData(response.accessToken, response.actualUser)
+                            navigateToMain(response.actualUser)
                         } else {
-                            Toast.makeText(this@Login, response.error ?: "Login failed", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@Login, response.message, Toast.LENGTH_LONG).show()
                         }
                     },
                     onFailure = { error ->
@@ -149,66 +190,36 @@ class Login : AppCompatActivity() {
             }
         }
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private fun saveAuthData(token: String, user: BackendUser?) {
-        val roleToSave = user?.role?.takeIf { it.isNotEmpty() }
-            ?: pendingRole?.lowercase()
-            ?: "student"
-
-        sharedPreferences.edit()
-            .putString("auth_token", token)
-            .putString("user_id",    user?.id ?: "")
-            .putString("user_email", user?.email ?: "")
-            .putString("user_name",  user?.fullName ?: "${user?.firstName} ${user?.lastName}".trim())
-            .putString("user_role",  roleToSave)
-            .apply()
-    }
-
-    private fun navigateToMain(roleFromResponse: String?) {
-        // Prefer the role the backend returned; fall back to what Register passed us
-        val role = roleFromResponse?.takeIf { it.isNotEmpty() }
-            ?: pendingRole?.lowercase()
-            ?: "student"
-        pendingRole = null
-
-        startActivity(dashboardIntent(role))
-        finish()
-    }
-
-    private fun dashboardIntent(role: String): Intent = when {
-        role.equals("admin",   ignoreCase = true) -> Intent(this, AdminDashboard::class.java)
-        role.equals("teacher", ignoreCase = true) ||
-        role.equals("faculty", ignoreCase = true) -> Intent(this, TeacherDashboard::class.java)
-        else                                       -> Intent(this, StudentDashboard::class.java)
-    }
-
-    // ── Animations ────────────────────────────────────────────────────────────
-
-    private fun startOrbAnimations() {
-        animateOrb(findViewById(R.id.orb1), 30000L,  100f, -100f)
-        animateOrb(findViewById(R.id.orb2), 40000L, -120f,   80f)
-        animateOrb(findViewById(R.id.orb3), 50000L,   60f,  160f)
-    }
-
-    private fun setupTiledBackground() {
-        findViewById<View>(R.id.waveBackground).background =
-            TiledDrawable.create(this, R.drawable.ic_wave_pattern)
-    }
-
-    private fun animateOrb(view: View, duration: Long, deltaX: Float, deltaY: Float) {
-        val pvhX      = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0f, deltaX, 0f)
-        val pvhY      = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f, deltaY, 0f)
-        val pvhScaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.5f, 1f)
-        val pvhScaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.5f, 1f)
-
-        ObjectAnimator.ofPropertyValuesHolder(view, pvhX, pvhY, pvhScaleX, pvhScaleY).apply {
-            this.duration = duration
-            repeatCount   = ValueAnimator.INFINITE
-            repeatMode    = ValueAnimator.REVERSE
-            interpolator  = AccelerateDecelerateInterpolator()
-            start()
+    
+    private fun saveAuthData(token: String, user: User?) {
+        val editor = sharedPreferences.edit()
+        editor.putString("auth_token", token)
+        user?.let {
+            editor.putString("user_id", it.id)
+            editor.putString("user_email", it.email)
+            editor.putString("user_name", it.name)
+            editor.putString("user_role", it.role)
         }
+        editor.apply()
+    }
+    
+    private fun clearAuthData() {
+        val editor = sharedPreferences.edit()
+        editor.remove("auth_token")
+        editor.remove("user_id")
+        editor.remove("user_email")
+        editor.remove("user_name")
+        editor.apply()
+    }
+    
+    private fun navigateToMain(user: User?) {
+        val role = user?.role ?: "Student"
+        val intent = when {
+            role.equals("Admin", ignoreCase = true) -> Intent(this, AdminDashboard::class.java)
+            role.equals("Teacher", ignoreCase = true) -> Intent(this, TeacherDashboard::class.java)
+            else -> Intent(this, StudentDashboard::class.java)
+        }
+        startActivity(intent)
+        finish()
     }
 }

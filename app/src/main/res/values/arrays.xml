@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="question_types">
+        <item>Short Answer</item>
+        <item>Multiple Choice</item>
+    </string-array>
+</resources>

@@ -86,44 +86,14 @@ const Register = () => {
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-white mb-2">
-                Full Name
-              </label>
-              <input
-                {...register('fullName', {
-                  required: 'Full name is required',
-                  minLength: {
-                    value: 2,
-                    message: 'Full name must be at least 2 characters',
-                  },
-                  maxLength: {
-                    value: 100,
-                    message: 'Full name cannot exceed 100 characters',
-                  },
-                })}
-                type="text"
-                autoComplete="name"
-                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                placeholder="Enter your full name"
-              />
-              {errors.fullName && (
-                <p className="mt-2 text-sm text-red-500">{errors.fullName.message}</p>
-              )}
-            </div>
-
-            <div>
               <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
                 Email
               </label>
               <input
                 {...register('email', {
                   required: 'Email is required',
-                  pattern: {
-                    value: /^\S+@\S+$/i,
-                    message: 'Invalid email address',
-                  },
                 })}
-                type="email"
+                type="text"
                 autoComplete="email"
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                 placeholder="Enter your email"
@@ -211,10 +181,17 @@ const Register = () => {
               <select
                 {...register('role')}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+<<<<<<<< HEAD:web/src/features/auth/pages/Register.js
                 defaultValue="student"
               >
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
+========
+                defaultValue="Student"
+              >
+                <option value="Student">Student</option>
+                <option value="Teacher">Teacher</option>
+>>>>>>>> 70de9cb (Implement Faculty Dashboard features: CRUD, Search, CSV Export, and Profile management):web/src/pages/auth/Register.js
               </select>
             </div>
 

@@ -48,5 +48,13 @@
     <!-- Orbs -->
     <color name="orb_blue_1">#1E40AF</color>
     <color name="orb_blue_2">#3B82F6</color>
-    <color name="orb_blue_3">#1D4ED8</color>
+    <color name="student_banner_blue">#2563EB</color>
+    <color name="student_card_bg">#111827</color>
+    <color name="icon_bg_pending">#1E293B</color>
+    <color name="icon_bg_completed">#064E3B</color>
+    <color name="icon_bg_rate">#451A03</color>
+    <color name="bg_stat_card">#111827</color>
+    <color name="gray_400">#94A3B8</color>
+    <color name="gray_600">#4B5563</color>
+    <color name="red_500">#EF4444</color>
 </resources>

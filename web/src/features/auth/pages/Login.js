@@ -208,6 +208,24 @@ const Login = () => {
           
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+<<<<<<<< HEAD:web/src/features/auth/pages/Login.js
+========
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                Username
+              </label>
+              <input
+                {...register('email', {
+                  required: 'Username is required',
+                })}
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="Enter your username"
+              />
+              {errors.email && (
+                <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+>>>>>>>> 70de9cb (Implement Faculty Dashboard features: CRUD, Search, CSV Export, and Profile management):web/src/pages/auth/Login.js
 
             <div>
 

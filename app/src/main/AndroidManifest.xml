@@ -37,8 +37,31 @@
             android:exported="false" />
 
         <activity
-            android:name=".pages.AdminDashboard"
+            android:name=".pages.ManageSurveysActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".pages.CreateSurveyActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".pages.ViewResponsesActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".pages.ProfileActivity"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 
